@@ -22,6 +22,11 @@ This guide explains how to create pull requests using GitHub CLI in our project.
    gh auth login
    ```
 
+## 事前準備
+- 現在のブランチがmain or stagingブランチの場合は、/create-branch してください。
+- コミットしてない場合はコミットしてください。
+- remoteにpushしていない場合は、pushしてください。
+
 ## Creating a New Pull Request
 
 1. First, prepare your PR description following the template in @.github/pull_request_template.md
@@ -29,15 +34,22 @@ This guide explains how to create pull requests using GitHub CLI in our project.
 2. Use the `gh pr create --draft` command to create a new pull request:
 
    ```bash
-   # Basic command structure
+   # Basic command structure (main branch)
    gh pr create --draft --title "✨(scope): Your descriptive title" --body "Your PR description" --base main 
+   
+   # Specify different base branch
+   gh pr create --draft --title "✨(scope): Your descriptive title" --body "Your PR description" --base staging
+   gh pr create --draft --title "✨(scope): Your descriptive title" --body "Your PR description" --base develop
    ```
 
    For more complex PR descriptions with proper formatting, use the `--body-file` option with the exact PR template structure:
 
    ```bash
-   # Create PR with proper template structure
+   # Create PR with proper template structure (main branch)
    gh pr create --draft --title "✨(scope): Your descriptive title" --body-file .github/pull_request_template.md --base main
+   
+   # Create PR against different base branch
+   gh pr create --draft --title "✨(scope): Your descriptive title" --body-file .github/pull_request_template.md --base staging
    ```
 
 ## Best Practices
@@ -59,7 +71,12 @@ This guide explains how to create pull requests using GitHub CLI in our project.
    - Keep all section headers exactly as they appear in the template
    - Don't add custom sections that aren't in the template
 
-4. **Draft PRs**: Start as draft when the work is in progress
+4. **Base Branch Selection**: Choose appropriate base branch
+   - `--base main` for production releases
+   - `--base staging` for staging environment deployment
+   - `--base develop` for development features
+
+5. **Draft PRs**: Start as draft when the work is in progress
    - Use `--draft` flag in the command
    - Convert to ready for review when complete using `gh pr ready`
 
@@ -108,7 +125,11 @@ To simplify PR creation with consistent descriptions, you can create a template 
 2. Use it when creating PRs:
 
 ```bash
+# Default to main branch
 gh pr create --draft --title "feat(scope): Your title" --body-file pr-template.md --base main
+
+# Specify different base branch
+gh pr create --draft --title "feat(scope): Your title" --body-file pr-template.md --base staging
 ```
 
 ## Related Documentation

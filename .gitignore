@@ -7,6 +7,10 @@ anthoropic/
 plugins/
 shell-snapshots/
 todos/
+history.jsonl
+file-history/
+debug/
+
 
 ## 以下は一般的なもの
 .DS_Store
