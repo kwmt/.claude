@@ -20,11 +20,33 @@
           }
         ]
       }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/permission-notification.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/task-complete-notification.sh"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
     "type": "command",
-    "command": "input=$(cat); current_dir=$(echo \"$input\" | jq -r '.workspace.current_dir'); if [ -d \"$current_dir/.git\" ] || git -C \"$current_dir\" rev-parse --git-dir > /dev/null 2>&1; then branch=$(git -C \"$current_dir\" branch --show-current 2>/dev/null || git -C \"$current_dir\" rev-parse --short HEAD 2>/dev/null || echo 'unknown'); printf \"\\033[2m%s on \\033[0;36m%s\\033[0;2m in %s\\033[0m\" \"$(echo \"$input\" | jq -r '.model.display_name')\" \"$branch\" \"$(basename \"$current_dir\")\"; else printf \"\\033[2m%s in %s\\033[0m\" \"$(echo \"$input\" | jq -r '.model.display_name')\" \"$(basename \"$current_dir\")\"; fi"
+    "command": "node ~/.claude/statusline.js"
   },
   "alwaysThinkingEnabled": true
 }
