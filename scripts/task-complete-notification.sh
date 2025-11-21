@@ -9,52 +9,73 @@ input=$(cat)
 # トランスクリプトパスを取得
 transcript_path=$(echo "$input" | jq -r '.transcript_path // ""')
 
+# デバッグログディレクトリ
+log_file="$HOME/.claude/task-complete.log"
+
 # ユーザープロンプトとアシスタントメッセージを抽出
 user_prompt="リクエスト"
 assistant_message="タスクが完了しました"
 
 if [ -n "$transcript_path" ] && [ -f "$transcript_path" ]; then
-    # トランスクリプトから最後のユーザーメッセージを抽出
-    # 逆順で読み込んで、最初に見つかったuserメッセージを取得
-    last_user_message=$(tac "$transcript_path" | \
-                        jq -r 'select(.role=="user") |
-                               if .content | type == "array" then
-                                   .content[] | select(.type=="text") | .text
-                               elif .content | type == "string" then
-                                   .content
+    # ユーザーの実際のプロンプトを抽出（メタメッセージやコマンド関連を除外）
+    last_user_message=$(jq -s 'reverse | .[] |
+                               select(.type == "user") |
+                               select((.isMeta // false) == false) |
+                               if .message.content | type == "string" then
+                                 .message.content
+                               elif .message.content | type == "array" then
+                                 .message.content[] | select(.type == "text") | .text
                                else
-                                   empty
-                               end' 2>/dev/null | \
+                                 empty
+                               end' "$transcript_path" 2>/dev/null | \
+                        grep -v "<command-name>" | \
+                        grep -v "<command-message>" | \
+                        grep -v "<command-args>" | \
+                        grep -v "<local-command-stdout>" | \
+                        grep -v "^Caveat:" | \
                         grep -v "^$" | \
                         head -1 | \
                         sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | \
-                        cut -c1-80)
+                        head -c 100)
 
     # ユーザープロンプトが取得できた場合は使用
     if [ -n "$last_user_message" ]; then
         user_prompt="$last_user_message"
+        # 長すぎる場合は省略記号を追加
+        if [ ${#last_user_message} -ge 100 ]; then
+            user_prompt="${user_prompt}..."
+        fi
     fi
 
-    # トランスクリプトから最後のアシスタントメッセージを抽出
-    # 逆順で読み込んで、最初に見つかったassistantメッセージを取得
-    last_assistant_message=$(tac "$transcript_path" | \
-                             jq -r 'select(.role=="assistant") |
-                                    if .content | type == "array" then
-                                        .content[] | select(.type=="text") | .text
-                                    elif .content | type == "string" then
-                                        .content
+    # アシスタントの最後のメッセージを抽出
+    last_assistant_message=$(jq -s 'reverse | .[] |
+                                    select(.type == "assistant") |
+                                    if .message.content | type == "string" then
+                                      .message.content
+                                    elif .message.content | type == "array" then
+                                      .message.content[] | select(.type == "text") | .text
                                     else
-                                        empty
-                                    end' 2>/dev/null | \
-                             grep -v "^$" | \
+                                      empty
+                                    end' "$transcript_path" 2>/dev/null | \
                              head -1 | \
                              sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | \
-                             cut -c1-120)
+                             grep -v '^$' | \
+                             head -c 150)
 
     # メッセージが取得できた場合は使用
     if [ -n "$last_assistant_message" ]; then
         assistant_message="$last_assistant_message"
+        # 長すぎる場合は省略記号を追加
+        if [ ${#last_assistant_message} -ge 150 ]; then
+            assistant_message="${assistant_message}..."
+        fi
     fi
+
+    # デバッグログ出力
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Transcript: $transcript_path" >> "$log_file"
+    echo "  User Prompt: $user_prompt" >> "$log_file"
+    echo "  Assistant: $assistant_message" >> "$log_file"
+    echo "" >> "$log_file"
 fi
 
 # サブタイトルとメッセージを構築
@@ -68,6 +89,3 @@ terminal-notifier \
     -subtitle "$subtitle" \
     -sound Funk \
     -activate com.apple.Terminal
-
-# デバッグ用（必要に応じてコメント解除）
-# echo "[$(date)] Prompt: $user_prompt | Response: $assistant_message" >> ~/.claude/task-complete.log
