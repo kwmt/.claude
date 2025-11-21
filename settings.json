@@ -48,5 +48,5 @@
     "type": "command",
     "command": "node ~/.claude/statusline.js"
   },
-  "alwaysThinkingEnabled": true
+  "alwaysThinkingEnabled": false
 }
