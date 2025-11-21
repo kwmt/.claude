@@ -1,0 +1,3 @@
+1. remoteのstagingブランチをlocalと同期して。
+2. 現在いるブランチがmain or stagingブランチ以外なら、同期されたstagingブランチを今いるブランチにrebaseして。
+3. 今いるブランチがすでにマージ済みのブランチであれば、そのブランチを削除して。stagingブランチにcheckoutして。
