@@ -3,6 +3,9 @@
 # Claude Code 共通関数
 # 実行中のターミナルアプリケーションを検出する
 
+# IDE検出機能を読み込む
+source ~/.claude/scripts/detect-ide.sh
+
 # ターミナルアプリケーションのBundle IDを検出する関数
 detect_terminal_bundle_id() {
     local bundle_id=""
@@ -114,4 +117,18 @@ get_terminal_name() {
             echo "Unknown ($bundle_id)"
             ;;
     esac
+}
+
+# アクティベーション用のBundle IDを取得（IDE優先、ターミナルにフォールバック）
+get_activation_bundle_id() {
+    # 1. IDE検出を試行
+    local ide_bundle_id=$(detect_ide_bundle_id)
+
+    if [ -n "$ide_bundle_id" ]; then
+        echo "$ide_bundle_id"
+        return 0
+    fi
+
+    # 2. ターミナル検出にフォールバック
+    detect_terminal_bundle_id
 }

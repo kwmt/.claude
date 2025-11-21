@@ -17,8 +17,8 @@ cwd=$(echo "$input" | jq -r '.cwd // ""')
 current_dir="${cwd:-${CLAUDE_PROJECT_DIR:-$(pwd)}}"
 dir_name=$(basename "$current_dir")
 
-# ターミナルアプリのBundle IDを検出
-TERMINAL_BUNDLE_ID=$(detect_terminal_bundle_id)
+# アクティベーション用のBundle IDを検出（IDE優先、ターミナルにフォールバック）
+ACTIVATION_BUNDLE_ID=$(get_activation_bundle_id)
 
 # デバッグログディレクトリ
 log_file="$HOME/.claude/task-complete.log"
@@ -93,10 +93,10 @@ fi
 subtitle="📝 $user_prompt"
 
 # 通知を送信（terminal-notifierを使用）
-# -activate で通知クリック時に実行中のターミナルに移動
+# -activate で通知クリック時に実行中のIDE/ターミナルに移動
 terminal-notifier \
     -title "Claude Code - タスク完了 ($dir_name)" \
     -message "$assistant_message" \
     -subtitle "$subtitle" \
     -sound Funk \
-    -activate "$TERMINAL_BUNDLE_ID"
+    -activate "$ACTIVATION_BUNDLE_ID"
