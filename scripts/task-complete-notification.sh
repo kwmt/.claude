@@ -9,6 +9,11 @@ input=$(cat)
 # トランスクリプトパスを取得
 transcript_path=$(echo "$input" | jq -r '.transcript_path // ""')
 
+# カレントディレクトリを取得（優先順位: cwd → CLAUDE_PROJECT_DIR → pwd）
+cwd=$(echo "$input" | jq -r '.cwd // ""')
+current_dir="${cwd:-${CLAUDE_PROJECT_DIR:-$(pwd)}}"
+dir_name=$(basename "$current_dir")
+
 # デバッグログディレクトリ
 log_file="$HOME/.claude/task-complete.log"
 
@@ -84,7 +89,7 @@ subtitle="📝 $user_prompt"
 # 通知を送信（terminal-notifierを使用）
 # -activate で通知クリック時にターミナルに移動
 terminal-notifier \
-    -title "Claude Code - タスク完了" \
+    -title "Claude Code - タスク完了 ($dir_name)" \
     -message "$assistant_message" \
     -subtitle "$subtitle" \
     -sound Funk \

@@ -9,8 +9,10 @@ input=$(cat)
 # ツール名を取得
 tool_name=$(echo "$input" | jq -r '.tool_name // "Unknown"')
 
-# 現在のディレクトリを取得（相対パス表示用）
-current_dir=$(pwd)
+# 現在のディレクトリを取得（優先順位: cwd → CLAUDE_PROJECT_DIR → pwd）
+cwd=$(echo "$input" | jq -r '.cwd // ""')
+current_dir="${cwd:-${CLAUDE_PROJECT_DIR:-$(pwd)}}"
+dir_name=$(basename "$current_dir")
 
 # ツール固有の情報を抽出
 detail=""
@@ -123,7 +125,7 @@ fi
 # 通知を送信（terminal-notifierを使用）
 # -activate で通知クリック時にターミナルに移動
 terminal-notifier \
-    -title "Claude Code - 確認待ち" \
+    -title "Claude Code - 確認待ち ($dir_name)" \
     -message "$message" \
     -subtitle "$subtitle" \
     -sound Glass \
