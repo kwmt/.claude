@@ -3,6 +3,9 @@
 # Claude Code Stopフックスクリプト
 # タスク完了時に詳細情報を含む通知を表示
 
+# 共通関数を読み込む
+source ~/.claude/scripts/detect-terminal.sh
+
 # 標準入力からJSONデータを読み込む
 input=$(cat)
 
@@ -13,6 +16,9 @@ transcript_path=$(echo "$input" | jq -r '.transcript_path // ""')
 cwd=$(echo "$input" | jq -r '.cwd // ""')
 current_dir="${cwd:-${CLAUDE_PROJECT_DIR:-$(pwd)}}"
 dir_name=$(basename "$current_dir")
+
+# ターミナルアプリのBundle IDを検出
+TERMINAL_BUNDLE_ID=$(detect_terminal_bundle_id)
 
 # デバッグログディレクトリ
 log_file="$HOME/.claude/task-complete.log"
@@ -87,10 +93,10 @@ fi
 subtitle="📝 $user_prompt"
 
 # 通知を送信（terminal-notifierを使用）
-# -activate で通知クリック時にターミナルに移動
+# -activate で通知クリック時に実行中のターミナルに移動
 terminal-notifier \
     -title "Claude Code - タスク完了 ($dir_name)" \
     -message "$assistant_message" \
     -subtitle "$subtitle" \
     -sound Funk \
-    -activate com.apple.Terminal
+    -activate "$TERMINAL_BUNDLE_ID"
