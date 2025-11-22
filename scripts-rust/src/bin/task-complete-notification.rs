@@ -6,6 +6,9 @@ fn main() -> io::Result<()> {
     let mut input_str = String::new();
     io::stdin().read_to_string(&mut input_str)?;
 
+    // デバッグ: 入力JSONをログに記録
+    let _ = std::fs::write("/Users/kwmt/.claude/stop-hook-input.log", &input_str);
+
     let input: StopHookInput = serde_json::from_str(&input_str)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 

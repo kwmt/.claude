@@ -275,12 +275,15 @@ pub fn extract_user_prompt(transcript_path: &str) -> io::Result<String> {
         if let Ok(msg) = serde_json::from_str::<TranscriptMessage>(&line) {
             if msg.msg_type == "user" && msg.is_meta != Some(true) {
                 if let Some(message_content) = msg.message {
-                    let content_str = extract_text_content(&message_content.content);
-                    if !content_str.is_empty()
-                        && !content_str.contains("<command-name>")
-                        && !content_str.starts_with("Caveat:")
-                    {
-                        messages.push(content_str);
+                    if message_content.role == "user" {
+                        let content_str = extract_text_content(&message_content.content);
+                        if !content_str.is_empty()
+                            && !content_str.contains("<command-name>")
+                            && !content_str.starts_with("Caveat:")
+                            && !content_str.starts_with("[Request interrupted by user for tool use]")
+                        {
+                            messages.push(content_str);
+                        }
                     }
                 }
             }
@@ -310,9 +313,11 @@ pub fn extract_assistant_message(transcript_path: &str) -> io::Result<String> {
         if let Ok(msg) = serde_json::from_str::<TranscriptMessage>(&line) {
             if msg.msg_type == "assistant" {
                 if let Some(message_content) = msg.message {
-                    let content_str = extract_text_content(&message_content.content);
-                    if !content_str.is_empty() {
-                        messages.push(content_str);
+                    if message_content.role == "assistant" {
+                        let content_str = extract_text_content(&message_content.content);
+                        if !content_str.is_empty() {
+                            messages.push(content_str);
+                        }
                     }
                 }
             }
