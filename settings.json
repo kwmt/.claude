@@ -19,6 +19,15 @@
             "command": "~/.claude/scripts/deny-check.sh"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/bin/format-tool-display"
+          }
+        ]
       }
     ],
     "Notification": [
