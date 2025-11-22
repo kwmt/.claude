@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/scripts/permission-notification"
+            "command": "~/.claude/bin/permission-notification"
           }
         ]
       }
@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/scripts/permission-notification"
+            "command": "~/.claude/bin/permission-notification"
           }
         ]
       }
@@ -49,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/scripts/task-complete-notification"
+            "command": "~/.claude/bin/task-complete-notification"
           }
         ]
       }

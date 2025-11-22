@@ -115,13 +115,13 @@ cargo build --release
 ### インストール
 
 ```bash
-# scriptsディレクトリにコピー
-cp target/release/permission-notification ../scripts/
-cp target/release/task-complete-notification ../scripts/
+# binディレクトリにコピー
+cp target/release/permission-notification ../bin/
+cp target/release/task-complete-notification ../bin/
 
 # 実行権限を付与
-chmod +x ../scripts/permission-notification
-chmod +x ../scripts/task-complete-notification
+chmod +x ../bin/permission-notification
+chmod +x ../bin/task-complete-notification
 ```
 
 ## テスト
@@ -226,12 +226,12 @@ Bashスクリプト版と比較して約5-10倍高速です。
 
 1. 実行権限を確認:
 ```bash
-ls -la ~/.claude/scripts/permission-notification
+ls -la ~/.claude/bin/permission-notification
 ```
 
 2. 依存関係を確認:
 ```bash
-otool -L ~/.claude/scripts/permission-notification
+otool -L ~/.claude/bin/permission-notification
 ```
 
 ### IDE検出が動作しない

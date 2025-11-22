@@ -49,9 +49,10 @@ Claude Codeの各種イベントでmacOS通知センターに通知を表示し�
 .claude/
 ├── settings.json              # Claude Code設定ファイル
 ├── README.md                  # このファイル
-├── scripts/                   # 実行可能バイナリ
+├── bin/                       # 実行可能バイナリ
 │   ├── permission-notification     # PermissionRequest/Notification用
-│   ├── task-complete-notification  # Stop用
+│   └── task-complete-notification  # Stop用
+├── scripts/                   # シェルスクリプト
 │   └── deny-check.sh              # PreToolUse用（コマンド拒否チェック）
 ├── scripts-rust/              # Rustソースコード
 │   ├── src/
@@ -81,8 +82,8 @@ brew install terminal-notifier
 ```bash
 cd ~/.claude/scripts-rust
 cargo build --release
-cp target/release/permission-notification ../scripts/
-cp target/release/task-complete-notification ../scripts/
+cp target/release/permission-notification ../bin/
+cp target/release/task-complete-notification ../bin/
 ```
 
 3. settings.jsonの確認:
@@ -103,7 +104,7 @@ cp target/release/task-complete-notification ../scripts/
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/scripts/permission-notification"
+            "command": "~/.claude/bin/permission-notification"
           }
         ]
       }
@@ -114,7 +115,7 @@ cp target/release/task-complete-notification ../scripts/
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/scripts/permission-notification"
+            "command": "~/.claude/bin/permission-notification"
           }
         ]
       }
@@ -125,7 +126,7 @@ cp target/release/task-complete-notification ../scripts/
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/scripts/task-complete-notification"
+            "command": "~/.claude/bin/task-complete-notification"
           }
         ]
       }
@@ -159,13 +160,13 @@ which terminal-notifier
 
 2. バイナリに実行権限があるか確認:
 ```bash
-ls -la ~/.claude/scripts/permission-notification
-ls -la ~/.claude/scripts/task-complete-notification
+ls -la ~/.claude/bin/permission-notification
+ls -la ~/.claude/bin/task-complete-notification
 ```
 
 3. 手動でテスト実行:
 ```bash
-echo '{"session_id":"test","cwd":"'$(pwd)'","notification_type":"idle_prompt","message":"テスト"}' | ~/.claude/scripts/permission-notification
+echo '{"session_id":"test","cwd":"'$(pwd)'","notification_type":"idle_prompt","message":"テスト"}' | ~/.claude/bin/permission-notification
 ```
 
 ### 通知タップでアプリがアクティブにならない
