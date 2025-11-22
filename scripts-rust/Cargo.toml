@@ -15,3 +15,7 @@ path = "src/bin/permission-notification.rs"
 [[bin]]
 name = "task-complete-notification"
 path = "src/bin/task-complete-notification.rs"
+
+[[bin]]
+name = "format-tool-display"
+path = "src/bin/format-tool-display.rs"
