@@ -145,6 +145,14 @@ cp target/release/task-complete-notification ../bin/
 
 通知をタップすると、実行中のIDE/ターミナルがアクティブになります。
 
+### 重要な注意事項
+
+**settings.jsonを変更した場合は、Claude Codeの再起動が必要です。**
+
+- 設定変更は現在のセッションには反映されません
+- 新しいセッションを開始するか、Claude Codeを再起動してください
+- 変更前の設定で実行中のフックはエラーになる可能性があります
+
 ## カスタマイズ
 
 通知の挙動をカスタマイズする場合は、`scripts-rust/README.md`を参照してください。
