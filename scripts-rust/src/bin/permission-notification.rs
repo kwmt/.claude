@@ -15,12 +15,38 @@ fn main() -> io::Result<()> {
     // アクティベーション用Bundle ID取得
     let activation_bundle_id = get_activation_bundle_id();
 
-    // ツール別メッセージ生成
-    let (subtitle, message) = build_tool_message(&input.tool_name, &input.tool_input, &input.cwd);
+    // 通知タイプに応じてメッセージを生成
+    let (title, subtitle, message) = match input.notification_type.as_deref() {
+        Some("idle_prompt") => {
+            // アイドル通知（60秒以上待機）
+            let title = format!("Claude Code - 入力待ち ({})", dir_name);
+            let subtitle = "⏱️ アイドル状態".to_string();
+            let message = input.message.unwrap_or_else(|| "入力を待っています".to_string());
+            (title, subtitle, message)
+        }
+        Some("permission_prompt") | None => {
+            // ツール実行の許可リクエスト（従来の動作）
+            if let (Some(tool_name), Some(tool_input)) = (&input.tool_name, &input.tool_input) {
+                let (subtitle, message) = build_tool_message(tool_name, tool_input, &input.cwd);
+                let title = format!("Claude Code - 確認待ち ({})", dir_name);
+                (title, subtitle, message)
+            } else {
+                // tool_nameもtool_inputもない場合はスキップ（通知を送らない）
+                return Ok(());
+            }
+        }
+        Some(other_type) => {
+            // その他の通知タイプ
+            let title = format!("Claude Code - 通知 ({})", dir_name);
+            let subtitle = format!("📢 {}", other_type);
+            let message = input.message.unwrap_or_else(|| "通知".to_string());
+            (title, subtitle, message)
+        }
+    };
 
     // 通知送信
     send_notification(
-        &format!("Claude Code - 確認待ち ({})", dir_name),
+        &title,
         &message,
         &subtitle,
         &activation_bundle_id,

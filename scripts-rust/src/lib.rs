@@ -11,8 +11,14 @@ use std::process::Command;
 pub struct HookInput {
     pub session_id: String,
     pub cwd: String,
-    pub tool_name: String,
-    pub tool_input: serde_json::Value,
+    #[serde(default)]
+    pub tool_name: Option<String>,
+    #[serde(default)]
+    pub tool_input: Option<serde_json::Value>,
+    #[serde(default)]
+    pub notification_type: Option<String>,
+    #[serde(default)]
+    pub message: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
