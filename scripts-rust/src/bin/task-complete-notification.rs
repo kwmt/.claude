@@ -45,6 +45,7 @@ fn main() -> io::Result<()> {
     // Slack通知送信
     let slack_title = "✅ Claude Code - Task Complete";
     let slack_fields = vec![
+        ("Session ID", input.session_id.as_str()),
         ("Directory", dir_name.as_str()),
         ("User Prompt", user_prompt.as_str()),
         ("Assistant Response", assistant_message.as_str()),

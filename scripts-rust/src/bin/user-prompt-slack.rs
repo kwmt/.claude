@@ -23,6 +23,7 @@ fn main() -> io::Result<()> {
     // Slackに通知
     let title = "🤔 New Claude Prompt";
     let fields = vec![
+        ("Session ID", input.session_id.as_str()),
         ("Directory", dir_name.as_str()),
         ("Permission Mode", input.permission_mode.as_str()),
         ("Prompt", truncated_prompt.as_str()),

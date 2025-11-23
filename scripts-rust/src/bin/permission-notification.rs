@@ -61,6 +61,7 @@ fn main() -> io::Result<()> {
     };
 
     let slack_fields = vec![
+        ("Session ID", input.session_id.as_str()),
         ("Directory", dir_name.as_str()),
         ("Type", subtitle.as_str()),
         ("Message", message.as_str()),
