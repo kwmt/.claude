@@ -53,6 +53,23 @@ fn main() -> io::Result<()> {
         "Glass",
     )?;
 
+    // Slack通知送信
+    let slack_title = match input.notification_type.as_deref() {
+        Some("idle_prompt") => "⏱️ Claude Code - Idle",
+        Some("permission_prompt") | None => "🔔 Claude Code - Permission Request",
+        _ => "📢 Claude Code - Notification",
+    };
+
+    let slack_fields = vec![
+        ("Directory", dir_name.as_str()),
+        ("Type", subtitle.as_str()),
+        ("Message", message.as_str()),
+    ];
+
+    if let Err(err) = post_to_slack_rich(slack_title, &slack_fields) {
+        eprintln!("Slack notification failed: {}", err);
+    }
+
     Ok(())
 }
 

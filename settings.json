@@ -62,6 +62,17 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/bin/user-prompt-slack"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
