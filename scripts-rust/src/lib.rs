@@ -419,13 +419,15 @@ pub fn post_to_slack_rich(title: &str, fields: &[(&str, &str)]) -> Result<(), St
 
     // フィールドブロック
     if !fields.is_empty() {
-        let mut field_elements = Vec::new();
-        for (label, value) in fields {
-            field_elements.push(ureq::json!({
-                "type": "mrkdwn",
-                "text": format!("*{}*\n{}", label, value)
-            }));
-        }
+        let field_elements: Vec<_> = fields
+            .iter()
+            .map(|(label, value)| {
+                ureq::json!({
+                    "type": "mrkdwn",
+                    "text": format!("*{}*\n{}", label, value)
+                })
+            })
+            .collect();
 
         blocks.push(ureq::json!({
             "type": "section",
