@@ -15,10 +15,11 @@ Claude Codeの通知フックシステムのRust実装です。
 
 ### バイナリ構成
 
-このプロジェクトは2つのバイナリを生成します：
+このプロジェクトは3つのバイナリを生成します：
 
 1. **permission-notification**: `Notification`および`PermissionRequest`フック用
 2. **task-complete-notification**: `Stop`フック用
+3. **user-prompt-slack**: `UserPromptSubmit`フック用（Slack通知専用）
 
 ### 主要コンポーネント
 
@@ -33,6 +34,7 @@ Claude Codeの通知フックシステムのRust実装です。
 
 - **通知送信**
   - `send_notification()`: terminal-notifierを使用してmacOS通知を送信
+  - `post_to_slack_rich()`: Slack Block Kitを使用したリッチフォーマット通知
 
 - **ユーティリティ**
   - `get_dir_name()`: カレントディレクトリ名を取得
@@ -94,7 +96,124 @@ struct StopHookInput {
 1. トランスクリプトファイルを解析
 2. 最後のユーザープロンプトを抽出（サブタイトルに使用）
 3. 最後のアシスタントメッセージを抽出（本文に使用）
-4. 通知を送信（サウンド: "Funk"）
+4. macOS通知を送信（サウンド: "Funk"）
+5. Slack通知を送信（環境変数が設定されている場合）
+
+#### `src/bin/user-prompt-slack.rs`
+
+`UserPromptSubmit`フックで使用されるバイナリ。ユーザーがプロンプトを送信したタイミングでSlack通知を送信。
+
+**入力JSON構造:**
+
+```rust
+struct UserPromptSubmitInput {
+    session_id: String,
+    transcript_path: Option<String>,
+    cwd: String,
+    permission_mode: String,
+    hook_event_name: String,
+    prompt: String,
+}
+```
+
+**動作:**
+
+1. ユーザープロンプトを取得（200文字で切り詰め）
+2. Slack Block Kit形式でリッチな通知を送信
+   - ディレクトリ名
+   - Permission Mode（bypassPermissions/default等）
+   - プロンプト内容
+
+## Slack通知機能
+
+### 概要
+
+全ての通知バイナリは、macOS通知に加えてSlackへの通知をサポートしています。Slack Block Kitを使用したリッチフォーマットで、見やすく構造化されたメッセージを送信します。
+
+### セットアップ
+
+#### 1. Slack Incoming Webhookの作成
+
+1. Slackワークスペースの[Incoming Webhooks](https://api.slack.com/messaging/webhooks)ページにアクセス
+2. "Create New Webhook"をクリック
+3. 通知を送信するチャンネルを選択
+4. Webhook URLをコピー（例: `https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXX`）
+
+#### 2. 環境変数の設定
+
+Webhook URLを環境変数に設定します。Codexの`SLACK_WEBHOOK_URL`と競合しないよう、専用の環境変数名を使用します。
+
+```bash
+# ~/.zshrc または ~/.bashrc に追加
+export CLAUDE_CODE_SLACK_WEBHOOK_URL="https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+```
+
+設定後、シェルを再起動するか、以下を実行：
+
+```bash
+source ~/.zshrc  # または source ~/.bashrc
+```
+
+#### 3. Claude Codeの再起動
+
+settings.jsonの変更を反映するため、Claude Codeを再起動してください。
+
+### 通知内容
+
+各バイナリは以下の情報をSlackに送信します：
+
+#### user-prompt-slack（プロンプト送信時）
+- **タイトル**: 🤔 New Claude Prompt
+- **フィールド**:
+  - Directory: 作業ディレクトリ名
+  - Permission Mode: 現在のPermissionモード
+  - Prompt: ユーザーが入力したプロンプト（200文字まで）
+
+#### task-complete-notification（タスク完了時）
+- **タイトル**: ✅ Claude Code - Task Complete
+- **フィールド**:
+  - Directory: 作業ディレクトリ名
+  - User Prompt: ユーザーのリクエスト内容
+  - Assistant Response: Claudeの応答メッセージ
+
+#### permission-notification（待機状態/権限リクエスト時）
+- **タイトル**:
+  - ⏱️ Claude Code - Idle（アイドル時）
+  - 🔔 Claude Code - Permission Request（権限リクエスト時）
+  - 📢 Claude Code - Notification（その他）
+- **フィールド**:
+  - Directory: 作業ディレクトリ名
+  - Type: 通知タイプ（🔧 コマンド実行、📖 ファイル読み込み等）
+  - Message: 詳細メッセージ
+
+### フェイルセーフ設計
+
+- Slack通知の失敗は既存のmacOS通知に影響しません
+- 環境変数が未設定の場合、Slack通知は静かにスキップされます
+- エラーは標準エラー出力に記録されますが、プログラムは正常終了します
+
+### トラブルシューティング
+
+#### Slack通知が送信されない
+
+1. 環境変数を確認:
+```bash
+echo $CLAUDE_CODE_SLACK_WEBHOOK_URL
+```
+
+2. Webhook URLの形式を確認:
+```bash
+# 正しい形式: https://hooks.slack.com/services/...
+```
+
+3. 手動テスト:
+```bash
+curl -X POST -H 'Content-Type: application/json' \
+  -d '{"text":"Test from Claude Code"}' \
+  $CLAUDE_CODE_SLACK_WEBHOOK_URL
+```
+
+4. Claude Codeを再起動して設定を反映
 
 ## ビルド
 
@@ -118,10 +237,12 @@ cargo build --release
 # binディレクトリにコピー
 cp target/release/permission-notification ../bin/
 cp target/release/task-complete-notification ../bin/
+cp target/release/user-prompt-slack ../bin/
 
 # 実行権限を付与
 chmod +x ../bin/permission-notification
 chmod +x ../bin/task-complete-notification
+chmod +x ../bin/user-prompt-slack
 ```
 
 ## テスト
@@ -148,6 +269,18 @@ echo '{"session_id":"test","cwd":"'$(pwd)'"}' | \
 # トランスクリプトありでテスト（実際のトランスクリプトパスを指定）
 echo '{"session_id":"test","cwd":"'$(pwd)'","transcript_path":"/path/to/transcript.jsonl"}' | \
   ./target/release/task-complete-notification
+```
+
+### 手動テスト - user-prompt-slack
+
+```bash
+# プロンプト送信のテスト（Slack通知）
+echo '{"session_id":"test","cwd":"'$(pwd)'","permission_mode":"bypassPermissions","hook_event_name":"UserPromptSubmit","prompt":"これはテストプロンプトです"}' | \
+  ./target/release/user-prompt-slack
+
+# 長いプロンプトのテスト（200文字で切り詰められる）
+echo '{"session_id":"test","cwd":"'$(pwd)'","permission_mode":"default","hook_event_name":"UserPromptSubmit","prompt":"'$(printf 'あ%.0s' {1..300})'"}' | \
+  ./target/release/user-prompt-slack
 ```
 
 ## カスタマイズ
@@ -206,11 +339,13 @@ tail -f ~/.claude/task-complete.log
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 chrono = "0.4"
+ureq = { version = "2", features = ["json"] }
 ```
 
 - **serde**: JSON入力のデシリアライズ
 - **serde_json**: JSON値の動的処理
 - **chrono**: タイムスタンプ生成（ログ用）
+- **ureq**: HTTP通信（Slack Webhook用）
 
 ## パフォーマンス
 

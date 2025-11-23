@@ -52,6 +52,16 @@ pub struct MessageContent {
     pub content: serde_json::Value,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct UserPromptSubmitInput {
+    pub session_id: String,
+    pub transcript_path: Option<String>,
+    pub cwd: String,
+    pub permission_mode: String,
+    pub hook_event_name: String,
+    pub prompt: String,
+}
+
 // ===== ターミナル検出 =====
 
 pub fn detect_terminal_bundle_id() -> String {
@@ -385,4 +395,53 @@ pub fn log_to_file(user_prompt: &str, assistant_message: &str) -> io::Result<()>
     writeln!(file)?;
 
     Ok(())
+}
+
+// ===== Slack通知 =====
+
+pub fn post_to_slack_rich(title: &str, fields: &[(&str, &str)]) -> Result<(), String> {
+    let webhook_url = match env::var("CLAUDE_CODE_SLACK_WEBHOOK_URL") {
+        Ok(url) if !url.is_empty() => url,
+        _ => return Ok(()), // 環境変数が設定されていない場合はスキップ
+    };
+
+    // Slack Block Kit形式のペイロードを構築
+    let mut blocks = Vec::new();
+
+    // ヘッダーブロック
+    blocks.push(ureq::json!({
+        "type": "header",
+        "text": {
+            "type": "plain_text",
+            "text": title,
+        }
+    }));
+
+    // フィールドブロック
+    if !fields.is_empty() {
+        let field_elements: Vec<_> = fields
+            .iter()
+            .map(|(label, value)| {
+                ureq::json!({
+                    "type": "mrkdwn",
+                    "text": format!("*{}*\n{}", label, value)
+                })
+            })
+            .collect();
+
+        blocks.push(ureq::json!({
+            "type": "section",
+            "fields": field_elements
+        }));
+    }
+
+    let payload = ureq::json!({
+        "blocks": blocks
+    });
+
+    ureq::post(&webhook_url)
+        .set("Content-Type", "application/json")
+        .send_json(payload)
+        .map(|_| ())
+        .map_err(|e| format!("Slack POST failed: {}", e))
 }

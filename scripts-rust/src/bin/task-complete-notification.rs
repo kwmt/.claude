@@ -42,5 +42,18 @@ fn main() -> io::Result<()> {
         "Funk",
     )?;
 
+    // Slack通知送信
+    let slack_title = "✅ Claude Code - Task Complete";
+    let slack_fields = vec![
+        ("Session ID", input.session_id.as_str()),
+        ("Directory", dir_name.as_str()),
+        ("User Prompt", user_prompt.as_str()),
+        ("Assistant Response", assistant_message.as_str()),
+    ];
+
+    if let Err(err) = post_to_slack_rich(slack_title, &slack_fields) {
+        eprintln!("Slack notification failed: {}", err);
+    }
+
     Ok(())
 }
