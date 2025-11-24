@@ -12,9 +12,9 @@ fn main() -> io::Result<()> {
     // ディレクトリ名を取得
     let dir_name = get_dir_name(&input.cwd);
 
-    // プロンプトを切り詰め（Slackの制限対応）
-    let truncated_prompt = if input.prompt.chars().count() > 200 {
-        let truncated: String = input.prompt.chars().take(200).collect();
+    // プロンプトを切り詰め（Slackの推奨制限4,000文字）
+    let truncated_prompt = if input.prompt.chars().count() > 4000 {
+        let truncated: String = input.prompt.chars().take(4000).collect();
         format!("{}...", truncated)
     } else {
         input.prompt.clone()
