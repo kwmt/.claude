@@ -11,7 +11,7 @@ if [ "$tool_name" != "Bash" ]; then
 fi
 
 # settings.json から拒否パターンを読み取り
-settings_file="$HOME/.claude/settings.json"
+settings_file="${HOME}/.claude/settings.json"
 
 # Bash コマンドの全拒否パターンを取得
 deny_patterns=$(jq -r '.permissions.deny[] | select(startswith("Bash(")) | gsub("^Bash\\("; "") | gsub("\\)$"; "")' "$settings_file" 2>/dev/null)
