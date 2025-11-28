@@ -9,6 +9,7 @@
     ],
     "defaultMode": "bypassPermissions"
   },
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -70,6 +71,17 @@
           {
             "type": "command",
             "command": "~/.claude/bin/user-prompt-slack"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/bin/askuser-answer-slack"
           }
         ]
       }

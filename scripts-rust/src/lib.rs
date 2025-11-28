@@ -62,6 +62,19 @@ pub struct UserPromptSubmitInput {
     pub prompt: String,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct PostToolUseInput {
+    pub session_id: String,
+    pub transcript_path: Option<String>,
+    pub cwd: String,
+    pub permission_mode: String,
+    pub hook_event_name: String,
+    pub tool_name: String,
+    pub tool_input: serde_json::Value,
+    pub tool_response: serde_json::Value,
+    pub tool_use_id: String,
+}
+
 // ===== ターミナル検出 =====
 
 pub fn detect_terminal_bundle_id() -> String {
