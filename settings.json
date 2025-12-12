@@ -33,6 +33,10 @@
     ],
     "Notification": [
       {
+        "matcher": "idle_prompt",
+        "hooks": []
+      },
+      {
         "matcher": "",
         "hooks": [
           {
@@ -91,5 +95,5 @@
     "type": "command",
     "command": "node ~/.claude/statusline.js"
   },
-  "alwaysThinkingEnabled": true
+  "alwaysThinkingEnabled": false
 }
