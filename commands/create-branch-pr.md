@@ -36,7 +36,7 @@
 
 ```bash
 # 基本的な使い方
-/branch-pr
+/create-branch-pr
 
 # 実行されるコマンドの流れ
 git checkout -b feat/new-feature
