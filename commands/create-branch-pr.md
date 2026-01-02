@@ -18,8 +18,9 @@
    - `git push -u origin {branch-name}` でリモートにプッシュ
 
 4. **PR作成**
-   - `gh pr create --draft` でドラフトPRを作成
-   - ベースブランチは `staging` を使用
+   - プロジェクトの `.claude/commands/pr.md` が存在する場合は `/pr` コマンドを使用
+   - 存在しない場合は `gh pr create --draft` でドラフトPRを作成
+   - ベースブランチは `staging` または `main` を使用
    - PRテンプレートは `.github/pull_request_template.md` を参照
 
 ## PRタイトル形式
@@ -41,5 +42,10 @@
 # 実行されるコマンドの流れ
 git checkout -b feat/new-feature
 git push -u origin feat/new-feature
-gh pr create --draft --title "✨(scope): Title" --base staging
+
+# プロジェクトに /pr コマンドがある場合
+/pr
+
+# /pr コマンドがない場合
+gh pr create --draft --title "✨(scope): Title" --base main
 ```
