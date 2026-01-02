@@ -95,5 +95,7 @@
     "type": "command",
     "command": "node ~/.claude/statusline.js"
   },
-  "alwaysThinkingEnabled": false
+  "enabledPlugins": {
+    "swift-lsp@claude-plugins-official": true
+  }
 }
