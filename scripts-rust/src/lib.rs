@@ -324,7 +324,7 @@ pub fn extract_user_prompt(transcript_path: &str) -> io::Result<String> {
         .cloned()
         .unwrap_or_else(|| "リクエスト".to_string());
 
-    Ok(truncate_string(&prompt, 100))
+    Ok(prompt)
 }
 
 pub fn extract_assistant_message(transcript_path: &str) -> io::Result<String> {
@@ -358,7 +358,7 @@ pub fn extract_assistant_message(transcript_path: &str) -> io::Result<String> {
         .cloned()
         .unwrap_or_else(|| "タスクが完了しました".to_string());
 
-    Ok(truncate_string(&message, 150))
+    Ok(message)
 }
 
 fn extract_text_content(content: &serde_json::Value) -> String {
@@ -380,14 +380,6 @@ fn extract_text_content(content: &serde_json::Value) -> String {
     }
 }
 
-fn truncate_string(s: &str, max_len: usize) -> String {
-    if s.chars().count() > max_len {
-        let truncated: String = s.chars().take(max_len).collect();
-        format!("{}...", truncated)
-    } else {
-        s.to_string()
-    }
-}
 
 pub fn log_to_file(user_prompt: &str, assistant_message: &str) -> io::Result<()> {
     use std::fs::OpenOptions;

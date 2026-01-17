@@ -92,19 +92,12 @@ fn build_tool_message(
                 .unwrap_or("");
 
             let message = if !description.is_empty() {
-                description
+                description.to_string()
             } else {
-                command
+                command.to_string()
             };
 
-            let truncated_message = if message.chars().count() > 150 {
-                let truncated: String = message.chars().take(150).collect();
-                truncated
-            } else {
-                message.to_string()
-            };
-
-            (subtitle, truncated_message)
+            (subtitle, message)
         }
         "Read" => {
             let subtitle = "📖 ファイル読み込み".to_string();
