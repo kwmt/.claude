@@ -26,16 +26,12 @@ fn main() -> io::Result<()> {
     // tool_response からユーザー回答を抽出
     let answer = extract_answer_from_response(&input.tool_response);
 
-    // 切り詰め
-    let truncated_questions = truncate(&questions, 500);
-    let truncated_answer = truncate(&answer, 1000);
-
     let title = "💬 AskUserQuestion Response";
     let fields = vec![
         ("Session ID", input.session_id.as_str()),
         ("Directory", dir_name.as_str()),
-        ("Question", truncated_questions.as_str()),
-        ("Answer", truncated_answer.as_str()),
+        ("Question", questions.as_str()),
+        ("Answer", answer.as_str()),
     ];
 
     if let Err(err) = post_to_slack_rich(title, &fields) {
@@ -61,11 +57,3 @@ fn extract_answer_from_response(response: &serde_json::Value) -> String {
     }
 }
 
-fn truncate(s: &str, max_len: usize) -> String {
-    if s.chars().count() > max_len {
-        let truncated: String = s.chars().take(max_len).collect();
-        format!("{}...", truncated)
-    } else {
-        s.to_string()
-    }
-}
