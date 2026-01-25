@@ -450,3 +450,71 @@ pub fn post_to_slack_rich(title: &str, fields: &[(&str, &str)]) -> Result<(), St
         .map(|_| ())
         .map_err(|e| format!("Slack POST failed: {}", e))
 }
+
+// ===== コンテンツ処理 =====
+
+/// コンテンツを指定の長さで切り詰める
+pub fn truncate_content(content: &str) -> String {
+    const MAX_LENGTH: usize = 2800;
+    if content.len() > MAX_LENGTH {
+        let truncated = &content[..MAX_LENGTH];
+        format!("{}...\n\n(truncated)", truncated)
+    } else {
+        content.to_string()
+    }
+}
+
+/// AskUserQuestionのtool_inputから質問とオプションを抽出してフォーマット
+pub fn extract_questions_with_options(tool_input: &serde_json::Value) -> String {
+    let questions = match tool_input.get("questions").and_then(|q| q.as_array()) {
+        Some(arr) => arr,
+        None => return "N/A".to_string(),
+    };
+
+    let mut result = Vec::new();
+
+    for (i, q) in questions.iter().enumerate() {
+        let question_text = q
+            .get("question")
+            .and_then(|v| v.as_str())
+            .unwrap_or("N/A");
+
+        let header = q
+            .get("header")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+
+        let mut question_str = if !header.is_empty() {
+            format!("*Q{}: [{}]* {}", i + 1, header, question_text)
+        } else {
+            format!("*Q{}:* {}", i + 1, question_text)
+        };
+
+        // オプションを抽出
+        if let Some(options) = q.get("options").and_then(|o| o.as_array()) {
+            let option_strs: Vec<String> = options
+                .iter()
+                .enumerate()
+                .filter_map(|(j, opt)| {
+                    let label = opt.get("label").and_then(|v| v.as_str())?;
+                    let description = opt.get("description").and_then(|v| v.as_str());
+
+                    if let Some(desc) = description {
+                        Some(format!("  {}. {} - {}", j + 1, label, desc))
+                    } else {
+                        Some(format!("  {}. {}", j + 1, label))
+                    }
+                })
+                .collect();
+
+            if !option_strs.is_empty() {
+                question_str.push_str("\n");
+                question_str.push_str(&option_strs.join("\n"));
+            }
+        }
+
+        result.push(question_str);
+    }
+
+    result.join("\n\n")
+}
