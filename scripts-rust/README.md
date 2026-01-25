@@ -45,6 +45,10 @@ Claude Codeの通知フックシステムのRust実装です。
   - `extract_user_prompt()`: トランスクリプトからユーザープロンプト抽出
   - `extract_assistant_message()`: トランスクリプトからアシスタントメッセージ抽出
 
+- **コンテンツ処理**
+  - `truncate_content()`: コンテンツを2800文字で切り詰め
+  - `extract_questions_with_options()`: AskUserQuestionのtool_inputから質問とオプションを抽出
+
 #### `src/bin/permission-notification.rs`
 
 `Notification`および`PermissionRequest`フックで使用されるバイナリ。
@@ -341,6 +345,26 @@ chmod +x ../bin/exitplanmode-slack
 ```
 
 ## テスト
+
+### ユニットテスト
+
+テストは`tests/`ディレクトリに配置されています。
+
+```bash
+# 全テスト実行
+cargo test
+
+# 特定のテストファイルを実行
+cargo test --test truncate_content_test
+cargo test --test extract_questions_test
+```
+
+**テストファイル:**
+
+| ファイル | テスト内容 |
+|---------|---------|
+| `tests/truncate_content_test.rs` | `truncate_content`関数のテスト（5テスト） |
+| `tests/extract_questions_test.rs` | `extract_questions_with_options`関数のテスト（6テスト） |
 
 ### 手動テスト - permission-notification
 
