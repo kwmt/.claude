@@ -23,6 +23,20 @@ Claude Codeの各種イベントでmacOS通知センターに通知を表示し�
    - ユーザーのリクエストと完了内容を表示
    - 例: 「📝 バグ修正 - 修正が完了しました」
 
+4. **プロンプト送信通知** - UserPromptSubmit時
+   - ユーザーがプロンプトを送信したタイミングでSlack通知
+   - 例: 「🤔 New Claude Prompt」
+
+5. **質問通知** - AskUserQuestion時
+   - Claudeがユーザーに質問を投げかけた時にSlack通知
+   - 質問内容とオプション一覧を表示
+   - 例: 「❓ Claude Question」
+
+6. **プラン完了通知** - ExitPlanMode時
+   - プランモード終了時にプラン内容をSlack通知
+   - プランファイルの全文を送信
+   - 例: 「📋 Plan Ready」
+
 #### 通知の特徴
 
 - **IDE/ターミナル自動検出**: VSCode、Cursor、iTerm2などを自動認識し、通知タップで該当アプリをアクティブ化
@@ -51,7 +65,11 @@ Claude Codeの各種イベントでmacOS通知センターに通知を表示し�
 ├── README.md                  # このファイル
 ├── bin/                       # 実行可能バイナリ
 │   ├── permission-notification     # PermissionRequest/Notification用
-│   └── task-complete-notification  # Stop用
+│   ├── task-complete-notification  # Stop用
+│   ├── user-prompt-slack           # UserPromptSubmit用
+│   ├── askuser-answer-slack        # AskUserQuestion回答通知用
+│   ├── askuser-question-slack      # AskUserQuestion質問通知用
+│   └── exitplanmode-slack          # ExitPlanMode通知用
 ├── scripts/                   # シェルスクリプト
 │   └── deny-check.sh              # PreToolUse用（コマンド拒否チェック）
 ├── scripts-rust/              # Rustソースコード
@@ -84,6 +102,10 @@ cd ~/.claude/scripts-rust
 cargo build --release
 cp target/release/permission-notification ../bin/
 cp target/release/task-complete-notification ../bin/
+cp target/release/user-prompt-slack ../bin/
+cp target/release/askuser-answer-slack ../bin/
+cp target/release/askuser-question-slack ../bin/
+cp target/release/exitplanmode-slack ../bin/
 ```
 
 3. settings.jsonの確認:
@@ -127,6 +149,41 @@ cp target/release/task-complete-notification ../bin/
           {
             "type": "command",
             "command": "~/.claude/bin/task-complete-notification"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/bin/user-prompt-slack"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/bin/askuser-question-slack"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/bin/askuser-answer-slack"
+          }
+        ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/bin/exitplanmode-slack"
           }
         ]
       }

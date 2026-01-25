@@ -15,11 +15,14 @@ Claude Codeの通知フックシステムのRust実装です。
 
 ### バイナリ構成
 
-このプロジェクトは3つのバイナリを生成します：
+このプロジェクトは6つのバイナリを生成します：
 
 1. **permission-notification**: `Notification`および`PermissionRequest`フック用
 2. **task-complete-notification**: `Stop`フック用
 3. **user-prompt-slack**: `UserPromptSubmit`フック用（Slack通知専用）
+4. **askuser-answer-slack**: `PostToolUse` (AskUserQuestion) フック用（Slack通知専用）
+5. **askuser-question-slack**: `PostToolUse` (AskUserQuestion) フック用（Slack通知専用）
+6. **exitplanmode-slack**: `PostToolUse` (ExitPlanMode) フック用（Slack通知専用）
 
 ### 主要コンポーネント
 
@@ -124,6 +127,72 @@ struct UserPromptSubmitInput {
    - Permission Mode（bypassPermissions/default等）
    - プロンプト内容
 
+#### `src/bin/askuser-answer-slack.rs`
+
+`PostToolUse` (AskUserQuestion) フックで使用されるバイナリ。ユーザーが質問に回答したタイミングでSlack通知を送信。
+
+**入力JSON構造:**
+
+```rust
+struct PostToolUseInput {
+    session_id: String,
+    cwd: String,
+    tool_name: String,
+    tool_input: Value,
+    tool_response: Value,
+}
+```
+
+**動作:**
+
+1. tool_responseからユーザーの回答を抽出
+2. 回答が空でない場合のみSlack通知を送信
+3. 質問内容と回答をリッチフォーマットで表示
+
+#### `src/bin/askuser-question-slack.rs`
+
+`PostToolUse` (AskUserQuestion) フックで使用されるバイナリ。Claudeが質問を投げかけたタイミングでSlack通知を送信。
+
+**入力JSON構造:**
+
+```rust
+struct PostToolUseInput {
+    session_id: String,
+    cwd: String,
+    tool_name: String,
+    tool_input: Value,
+    tool_response: Value,
+}
+```
+
+**動作:**
+
+1. tool_inputから質問内容とオプションを抽出
+2. Slack Block Kit形式で質問とオプション一覧を送信
+3. 各オプションのラベルと説明を表示
+
+#### `src/bin/exitplanmode-slack.rs`
+
+`PostToolUse` (ExitPlanMode) フックで使用されるバイナリ。プランモード終了時にSlack通知を送信。
+
+**入力JSON構造:**
+
+```rust
+struct PostToolUseInput {
+    session_id: String,
+    cwd: String,
+    tool_name: String,
+    tool_input: Value,
+    tool_response: Value,
+}
+```
+
+**動作:**
+
+1. `~/.claude/plans/`から最新の.mdファイルを検索
+2. プランファイルの内容を読み込み
+3. 2800文字で切り詰めてSlack通知を送信
+
 ## Slack通知機能
 
 ### 概要
@@ -186,6 +255,26 @@ settings.jsonの変更を反映するため、Claude Codeを再起動してく�
   - Type: 通知タイプ（🔧 コマンド実行、📖 ファイル読み込み等）
   - Message: 詳細メッセージ
 
+#### askuser-question-slack（質問時）
+- **タイトル**: ❓ Claude Question
+- **フィールド**:
+  - Directory: 作業ディレクトリ名
+  - Question: Claudeからの質問内容
+  - Options: 選択可能なオプション一覧（ラベルと説明）
+
+#### askuser-answer-slack（回答時）
+- **タイトル**: 💬 User Answer
+- **フィールド**:
+  - Directory: 作業ディレクトリ名
+  - Question: 元の質問内容
+  - Answer: ユーザーの回答
+
+#### exitplanmode-slack（プラン完了時）
+- **タイトル**: 📋 Plan Ready
+- **フィールド**:
+  - Directory: 作業ディレクトリ名
+  - Plan: プランファイルの内容（2800文字まで）
+
 ### フェイルセーフ設計
 
 - Slack通知の失敗は既存のmacOS通知に影響しません
@@ -238,11 +327,17 @@ cargo build --release
 cp target/release/permission-notification ../bin/
 cp target/release/task-complete-notification ../bin/
 cp target/release/user-prompt-slack ../bin/
+cp target/release/askuser-answer-slack ../bin/
+cp target/release/askuser-question-slack ../bin/
+cp target/release/exitplanmode-slack ../bin/
 
 # 実行権限を付与
 chmod +x ../bin/permission-notification
 chmod +x ../bin/task-complete-notification
 chmod +x ../bin/user-prompt-slack
+chmod +x ../bin/askuser-answer-slack
+chmod +x ../bin/askuser-question-slack
+chmod +x ../bin/exitplanmode-slack
 ```
 
 ## テスト
@@ -281,6 +376,30 @@ echo '{"session_id":"test","cwd":"'$(pwd)'","permission_mode":"bypassPermissions
 # 長いプロンプトのテスト（200文字で切り詰められる）
 echo '{"session_id":"test","cwd":"'$(pwd)'","permission_mode":"default","hook_event_name":"UserPromptSubmit","prompt":"'$(printf 'あ%.0s' {1..300})'"}' | \
   ./target/release/user-prompt-slack
+```
+
+### 手動テスト - askuser-question-slack
+
+```bash
+# 質問通知のテスト
+echo '{"session_id":"test","cwd":"'$(pwd)'","tool_name":"AskUserQuestion","tool_input":{"questions":[{"question":"どのフレームワークを使用しますか？","header":"Framework","options":[{"label":"React","description":"人気のUIライブラリ"},{"label":"Vue","description":"プログレッシブフレームワーク"}],"multiSelect":false}]},"tool_response":{}}' | \
+  ./target/release/askuser-question-slack
+```
+
+### 手動テスト - askuser-answer-slack
+
+```bash
+# 回答通知のテスト
+echo '{"session_id":"test","cwd":"'$(pwd)'","tool_name":"AskUserQuestion","tool_input":{"questions":[{"question":"どのフレームワークを使用しますか？","header":"Framework","options":[{"label":"React","description":"人気のUIライブラリ"}],"multiSelect":false}]},"tool_response":{"result":[{"question":"どのフレームワークを使用しますか？","answer":["React"]}]}}' | \
+  ./target/release/askuser-answer-slack
+```
+
+### 手動テスト - exitplanmode-slack
+
+```bash
+# プラン完了通知のテスト（~/.claude/plans/に.mdファイルが存在する必要があります）
+echo '{"session_id":"test","cwd":"'$(pwd)'","tool_name":"ExitPlanMode","tool_input":{},"tool_response":{}}' | \
+  ./target/release/exitplanmode-slack
 ```
 
 ## カスタマイズ
