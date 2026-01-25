@@ -24,3 +24,15 @@ path = "src/bin/format-tool-display.rs"
 [[bin]]
 name = "user-prompt-slack"
 path = "src/bin/user-prompt-slack.rs"
+
+[[bin]]
+name = "askuser-answer-slack"
+path = "src/bin/askuser-answer-slack.rs"
+
+[[bin]]
+name = "exitplanmode-slack"
+path = "src/bin/exitplanmode-slack.rs"
+
+[[bin]]
+name = "askuser-question-slack"
+path = "src/bin/askuser-question-slack.rs"

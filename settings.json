@@ -81,8 +81,21 @@
     ],
     "PostToolUse": [
       {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/bin/exitplanmode-slack"
+          }
+        ]
+      },
+      {
         "matcher": "AskUserQuestion",
         "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/bin/askuser-question-slack"
+          },
           {
             "type": "command",
             "command": "~/.claude/bin/askuser-answer-slack"
