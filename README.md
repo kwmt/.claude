@@ -43,6 +43,45 @@ Claude Codeの各種イベントでmacOS通知センターに通知を表示し�
 - **日本語ローカライズ**: 全ての通知メッセージが日本語
 - **ツール別アイコン**: Bash、Read、Write、Edit、Grep、Globなど各ツールに専用の絵文字アイコン
 
+### Slack「iTerm2で開く」リンク
+
+Slack通知に含まれる「iTerm2で開く」リンクをクリックすると、該当するiTerm2のタブ/セッションに自動で切り替わります。
+
+#### 仕組み
+
+```
+Slackの「iTerm2で開く」リンクをクリック
+  ↓
+macOS LaunchServices が x-claude-iterm:// URLスキームを処理
+  ↓
+iTerm2Switch.app が起動（AppleScriptアプリ）
+  ↓
+GUIDに一致するiTerm2セッションを検索・選択
+  ↓
+iTerm2がアクティブになり、正しいタブ/セッションに切り替え
+```
+
+#### セットアップ
+
+セットアップスクリプトを実行して、URLスキームハンドラを登録します:
+
+```bash
+~/.claude/bin/setup-iterm2-url-handler.sh
+```
+
+このスクリプトは以下を行います:
+1. AppleScriptをアプリ（`iTerm2Switch.app`）にコンパイル
+2. `x-claude-iterm://` URLスキームをInfo.plistに登録
+3. コード署名とQuarantine属性の削除
+4. macOS LaunchServicesにURLスキームを登録
+
+#### 初回のAutomation権限許可
+
+初回実行時にmacOSのAutomation権限の許可が必要です:
+
+1. 「システム設定 > プライバシーとセキュリティ > オートメーション」を開く
+2. **iTerm2Switch.app → iTerm2** を許可する
+
 ### 権限制御
 
 `settings.json`で特定のコマンドを拒否リストに登録できます。
@@ -69,7 +108,10 @@ Claude Codeの各種イベントでmacOS通知センターに通知を表示し�
 │   ├── user-prompt-slack           # UserPromptSubmit用
 │   ├── askuser-answer-slack        # AskUserQuestion回答通知用
 │   ├── askuser-question-slack      # AskUserQuestion質問通知用
-│   └── exitplanmode-slack          # ExitPlanMode通知用
+│   ├── exitplanmode-slack          # ExitPlanMode通知用
+│   ├── iTerm2Switch.applescript   # iTerm2セッション切り替えAppleScript
+│   ├── iTerm2Switch.app/          # コンパイル済みURLスキームハンドラ
+│   └── setup-iterm2-url-handler.sh # URLスキームハンドラセットアップ
 ├── scripts/                   # シェルスクリプト
 │   └── deny-check.sh              # PreToolUse用（コマンド拒否チェック）
 ├── scripts-rust/              # Rustソースコード
@@ -247,6 +289,27 @@ IDE/ターミナルの自動検出は以下をサポートしています:
 - Hyper
 
 サポート外のアプリの場合、Apple Terminalがデフォルトで使用されます。
+
+### Slackの「iTerm2で開く」リンクが動かない
+
+1. セットアップスクリプトが実行済みか確認:
+```bash
+ls -la ~/.claude/bin/iTerm2Switch.app
+```
+
+2. URLスキームが登録されているか確認:
+```bash
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -dump | grep x-claude-iterm
+```
+
+3. 登録されていない場合、セットアップを再実行:
+```bash
+~/.claude/bin/setup-iterm2-url-handler.sh
+```
+
+4. Automation権限が許可されているか確認:
+   - 「システム設定 > プライバシーとセキュリティ > オートメーション」を開く
+   - **iTerm2Switch.app → iTerm2** が許可されていることを確認
 
 ## ライセンス
 
