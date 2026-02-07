@@ -77,37 +77,37 @@ pub struct PostToolUseInput {
 
 // ===== ターミナル検出 =====
 
-pub fn detect_terminal_bundle_id() -> String {
+pub fn detect_terminal_bundle_id() -> Option<String> {
     // 1. TERM_PROGRAM環境変数で検出
     if let Ok(term_program) = env::var("TERM_PROGRAM") {
         match term_program.as_str() {
-            "iTerm.app" => return "com.googlecode.iterm2".to_string(),
-            "Apple_Terminal" => return "com.apple.Terminal".to_string(),
-            "WarpTerminal" => return "dev.warp.Warp-Stable".to_string(),
-            "Hyper" => return "co.zeit.hyper".to_string(),
+            "iTerm.app" => return Some("com.googlecode.iterm2".to_string()),
+            "Apple_Terminal" => return Some("com.apple.Terminal".to_string()),
+            "WarpTerminal" => return Some("dev.warp.Warp-Stable".to_string()),
+            "Hyper" => return Some("co.zeit.hyper".to_string()),
             _ => {}
         }
     }
 
     // 2. ターミナル固有の環境変数で検出
     if env::var("ITERM_SESSION_ID").is_ok() {
-        return "com.googlecode.iterm2".to_string();
+        return Some("com.googlecode.iterm2".to_string());
     }
     if env::var("ALACRITTY_SOCKET").is_ok() {
-        return "io.alacritty.Alacritty".to_string();
+        return Some("io.alacritty.Alacritty".to_string());
     }
     if env::var("KITTY_WINDOW_ID").is_ok() {
-        return "net.kovidgoyal.kitty".to_string();
+        return Some("net.kovidgoyal.kitty".to_string());
     }
     if env::var("WARP_IS_LOCAL_SHELL_SESSION").is_ok() {
-        return "dev.warp.Warp-Stable".to_string();
+        return Some("dev.warp.Warp-Stable".to_string());
     }
 
     // 3. LC_TERMINAL環境変数で検出
     if let Ok(lc_terminal) = env::var("LC_TERMINAL") {
         match lc_terminal.as_str() {
-            "iTerm2" => return "com.googlecode.iterm2".to_string(),
-            "Terminal" => return "com.apple.Terminal".to_string(),
+            "iTerm2" => return Some("com.googlecode.iterm2".to_string()),
+            "Terminal" => return Some("com.apple.Terminal".to_string()),
             _ => {}
         }
     }
@@ -115,14 +115,14 @@ pub fn detect_terminal_bundle_id() -> String {
     // 4. TERM環境変数で推測
     if let Ok(term) = env::var("TERM") {
         match term.as_str() {
-            "xterm-kitty" => return "net.kovidgoyal.kitty".to_string(),
-            "alacritty" => return "io.alacritty.Alacritty".to_string(),
+            "xterm-kitty" => return Some("net.kovidgoyal.kitty".to_string()),
+            "alacritty" => return Some("io.alacritty.Alacritty".to_string()),
             _ => {}
         }
     }
 
-    // 6. フォールバック
-    "com.apple.Terminal".to_string()
+    // 検出できなかった場合
+    None
 }
 
 // ===== IDE検出 =====
@@ -226,13 +226,16 @@ fn get_bundle_id_from_pid(pid: u32) -> Option<String> {
 // ===== 統合検出 =====
 
 pub fn get_activation_bundle_id() -> String {
-    // IDE優先
+    // 1. ターミナルが明示的に検出された場合はそれを使用
+    if let Some(terminal_id) = detect_terminal_bundle_id() {
+        return terminal_id;
+    }
+    // 2. IDE検出
     if let Some(ide_id) = detect_ide_bundle_id() {
         return ide_id;
     }
-
-    // ターミナルフォールバック
-    detect_terminal_bundle_id()
+    // 3. フォールバック
+    "com.apple.Terminal".to_string()
 }
 
 // ===== 通知送信 =====
@@ -244,22 +247,42 @@ pub fn send_notification(
     bundle_id: &str,
     sound: &str,
 ) -> io::Result<()> {
+    let mut args = vec![
+        "-title".to_string(), title.to_string(),
+        "-message".to_string(), message.to_string(),
+        "-subtitle".to_string(), subtitle.to_string(),
+        "-sound".to_string(), sound.to_string(),
+    ];
+
+    // iTerm2の場合: -execute で特定セッションに移動
+    if bundle_id == "com.googlecode.iterm2" {
+        if let Some(execute_cmd) = build_iterm2_activate_command() {
+            args.extend(["-execute".to_string(), execute_cmd]);
+        }
+    }
+
+    // すべての場合: -activate でアプリをアクティブ化
+    args.extend(["-activate".to_string(), bundle_id.to_string()]);
+
     Command::new("terminal-notifier")
-        .args(&[
-            "-title",
-            title,
-            "-message",
-            message,
-            "-subtitle",
-            subtitle,
-            "-sound",
-            sound,
-            "-activate",
-            bundle_id,
-        ])
+        .args(args.iter().map(|s| s.as_str()).collect::<Vec<_>>())
         .output()?;
 
     Ok(())
+}
+
+fn build_iterm2_activate_command() -> Option<String> {
+    let session_id = env::var("ITERM_SESSION_ID").ok()?;
+    let guid = session_id.split(':').nth(1)?;
+    if guid.is_empty() {
+        return None;
+    }
+
+    // AppleScriptでセッションIDに一致するセッションを選択
+    Some(format!(
+        r#"osascript -e 'tell application "iTerm2"' -e 'activate' -e 'repeat with w in windows' -e 'tell w' -e 'repeat with t in tabs' -e 'tell t' -e 'repeat with s in sessions' -e 'if id of s is "{}" then' -e 'select' -e 'end if' -e 'end repeat' -e 'end tell' -e 'end repeat' -e 'end tell' -e 'end repeat' -e 'end tell'"#,
+        guid
+    ))
 }
 
 // ===== ユーティリティ =====
