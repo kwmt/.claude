@@ -1,6 +1,35 @@
-1. Fix issue #$ARGUMENTS following our coding standards. `gh`コマンドを使ってissueを確認してください。
-2. 現在のブランチがmain or staging ブランチの場合は、 /create-branch してください。
-2. 修正完了したらPRを作成してください。
-3. PR作成時には `close #$ARGUMENTS` と書いてください。
+# Fix Issue with Agent Team
 
-※"http://localhost:8080”のportの変更はコミットしないでください。
+## Phase 1: Issue確認
+1. `gh` コマンドで $ARGUMENTS（URLまたはissue番号）の内容を確認する
+2. issueの種類（バグ修正、機能追加、リファクタリング等）・規模・影響範囲を把握する
+
+## Phase 2: ブランチ作成
+- 現在のブランチが main, staging, develop のいずれかの場合は `/create-branch` を実行する
+
+## Phase 3: エージェントチーム作成
+issueの内容を解釈し、適切なエージェントチームを構成する。
+
+### 基本構成（issueの内容に応じて柔軟に調整すること）:
+- **調査エージェント（researcher）**: issueに関連するコードベースの探索、原因特定、影響範囲の調査
+- **実装エージェント（implementer）**: 調査結果に基づいたコード修正・実装
+- **レビューエージェント（reviewer）**: 実装結果のコードレビュー、品質チェック
+
+### チーム規模の調整:
+- issueが小規模な場合: 調査+実装の2エージェントに縮小してもよい
+- issueが複雑な場合: エージェントの役割をさらに細分化してもよい
+
+## Phase 4: チーム作業の実行・管理
+1. タスクリストを作成し、各エージェントにタスクを割り当てる
+2. 依存関係を設定する（調査 → 実装 → レビュー の順）
+3. 各エージェントの完了を待ち、次のフェーズに進める
+4. エージェント間の連携を管理し、必要に応じて情報を橋渡しする
+
+## Phase 5: PR作成
+1. 修正完了後、PRを作成する
+2. PR本文にissueをcloseするリンクを記載する
+   - $ARGUMENTS がURLの場合: そのURLから適切にclose記法を生成
+   - $ARGUMENTS がissue番号の場合: `close #$ARGUMENTS` と記載
+
+## 注意事項
+- `http://localhost:8080` のport変更はコミットしないこと
