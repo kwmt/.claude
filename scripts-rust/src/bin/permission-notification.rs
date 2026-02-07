@@ -12,23 +12,37 @@ fn main() -> io::Result<()> {
     // ディレクトリ名取得
     let dir_name = get_dir_name(&input.cwd);
 
+    // ブランチ名取得
+    let branch_name = get_git_branch(&input.cwd);
+    let branch_suffix = branch_name
+        .as_ref()
+        .map(|b| format!(" [{}]", b))
+        .unwrap_or_default();
+
     // アクティベーション用Bundle ID取得
     let activation_bundle_id = get_activation_bundle_id();
+
+    // ブランチ名のサブタイトル用プレフィックス
+    let branch_prefix = branch_name
+        .as_ref()
+        .map(|b| format!("[{}] ", b))
+        .unwrap_or_default();
 
     // 通知タイプに応じてメッセージを生成
     let (title, subtitle, message) = match input.notification_type.as_deref() {
         Some("idle_prompt") => {
             // アイドル通知（60秒以上待機）
             let title = format!("Claude Code - 入力待ち ({})", dir_name);
-            let subtitle = "⏱️ アイドル状態".to_string();
+            let subtitle = format!("{}⏱️ アイドル状態", branch_prefix);
             let message = input.message.unwrap_or_else(|| "入力を待っています".to_string());
             (title, subtitle, message)
         }
         Some("permission_prompt") | None => {
             // ツール実行の許可リクエスト（従来の動作）
             if let (Some(tool_name), Some(tool_input)) = (&input.tool_name, &input.tool_input) {
-                let (subtitle, message) = build_tool_message(tool_name, tool_input, &input.cwd);
+                let (tool_subtitle, message) = build_tool_message(tool_name, tool_input, &input.cwd);
                 let title = format!("Claude Code - 確認待ち ({})", dir_name);
+                let subtitle = format!("{}{}", branch_prefix, tool_subtitle);
                 (title, subtitle, message)
             } else {
                 // tool_nameもtool_inputもない場合はスキップ（通知を送らない）
@@ -38,7 +52,7 @@ fn main() -> io::Result<()> {
         Some(other_type) => {
             // その他の通知タイプ
             let title = format!("Claude Code - 通知 ({})", dir_name);
-            let subtitle = format!("📢 {}", other_type);
+            let subtitle = format!("{}📢 {}", branch_prefix, other_type);
             let message = input.message.unwrap_or_else(|| "通知".to_string());
             (title, subtitle, message)
         }
@@ -54,21 +68,24 @@ fn main() -> io::Result<()> {
     )?;
 
     // Slack通知送信
-    let slack_title = match input.notification_type.as_deref() {
+    let slack_title_base = match input.notification_type.as_deref() {
         Some("idle_prompt") => "⏱️ Claude Code - Idle",
         Some("permission_prompt") | None => "🔔 Claude Code - Permission Request",
         _ => "📢 Claude Code - Notification",
     };
+    let slack_title = format!("{}{}", slack_title_base, branch_suffix);
 
+    let branch_display = branch_name.as_deref().unwrap_or("N/A");
     let slack_fields = vec![
         ("Session ID", input.session_id.as_str()),
         ("Directory", dir_name.as_str()),
+        ("Branch", branch_display),
         ("Type", subtitle.as_str()),
         ("Message", message.as_str()),
     ];
 
     let iterm2_url = build_iterm2_url_scheme();
-    if let Err(err) = post_to_slack_rich(slack_title, &slack_fields, iterm2_url.as_deref()) {
+    if let Err(err) = post_to_slack_rich(&slack_title, &slack_fields, iterm2_url.as_deref()) {
         eprintln!("Slack notification failed: {}", err);
     }
 

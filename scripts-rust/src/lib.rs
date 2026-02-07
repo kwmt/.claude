@@ -300,6 +300,21 @@ pub fn build_iterm2_url_scheme() -> Option<String> {
 
 // ===== ユーティリティ =====
 
+pub fn get_git_branch(cwd: &str) -> Option<String> {
+    Command::new("git")
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .current_dir(cwd)
+        .output()
+        .ok()
+        .and_then(|output| {
+            if output.status.success() {
+                String::from_utf8(output.stdout).ok().map(|s| s.trim().to_string())
+            } else {
+                None
+            }
+        })
+}
+
 pub fn get_dir_name(cwd: &str) -> String {
     Path::new(cwd)
         .file_name()
