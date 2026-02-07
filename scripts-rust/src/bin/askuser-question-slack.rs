@@ -20,7 +20,8 @@ fn main() -> io::Result<()> {
         ("Questions", questions_info.as_str()),
     ];
 
-    if let Err(err) = post_to_slack_rich(title, &fields) {
+    let iterm2_url = build_iterm2_url_scheme();
+    if let Err(err) = post_to_slack_rich(title, &fields, iterm2_url.as_deref()) {
         eprintln!("Slack notification failed: {}", err);
     }
 

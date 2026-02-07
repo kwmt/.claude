@@ -279,10 +279,40 @@ fn build_iterm2_activate_command() -> Option<String> {
     }
 
     // AppleScriptでセッションIDに一致するセッションを選択
-    Some(format!(
+    Some(build_iterm2_osascript(guid))
+}
+
+fn build_iterm2_osascript(guid: &str) -> String {
+    format!(
         r#"osascript -e 'tell application "iTerm2"' -e 'activate' -e 'repeat with w in windows' -e 'tell w' -e 'repeat with t in tabs' -e 'tell t' -e 'repeat with s in sessions' -e 'if id of s is "{}" then' -e 'select' -e 'end if' -e 'end repeat' -e 'end tell' -e 'end repeat' -e 'end tell' -e 'end repeat' -e 'end tell'"#,
         guid
-    ))
+    )
+}
+
+fn url_encode(input: &str) -> String {
+    let mut encoded = String::new();
+    for byte in input.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(byte as char);
+            }
+            _ => {
+                encoded.push_str(&format!("%{:02X}", byte));
+            }
+        }
+    }
+    encoded
+}
+
+pub fn build_iterm2_url_scheme() -> Option<String> {
+    let session_id = env::var("ITERM_SESSION_ID").ok()?;
+    let guid = session_id.split(':').nth(1)?;
+    if guid.is_empty() {
+        return None;
+    }
+
+    let cmd = build_iterm2_osascript(guid);
+    Some(format!("iterm2://command?c={}&silent", url_encode(&cmd)))
 }
 
 // ===== ユーティリティ =====
@@ -427,7 +457,7 @@ pub fn log_to_file(user_prompt: &str, assistant_message: &str) -> io::Result<()>
 
 // ===== Slack通知 =====
 
-pub fn post_to_slack_rich(title: &str, fields: &[(&str, &str)]) -> Result<(), String> {
+pub fn post_to_slack_rich(title: &str, fields: &[(&str, &str)], button_url: Option<&str>) -> Result<(), String> {
     let webhook_url = match env::var("CLAUDE_CODE_SLACK_WEBHOOK_URL") {
         Ok(url) if !url.is_empty() => url,
         _ => return Ok(()), // 環境変数が設定されていない場合はスキップ
@@ -460,6 +490,19 @@ pub fn post_to_slack_rich(title: &str, fields: &[(&str, &str)]) -> Result<(), St
         blocks.push(ureq::json!({
             "type": "section",
             "fields": field_elements
+        }));
+    }
+
+    // iTerm2で開くボタン
+    if let Some(url) = button_url {
+        blocks.push(ureq::json!({
+            "type": "actions",
+            "elements": [{
+                "type": "button",
+                "text": { "type": "plain_text", "text": "iTerm2 で開く" },
+                "url": url,
+                "action_id": "open_iterm2"
+            }]
         }));
     }
 

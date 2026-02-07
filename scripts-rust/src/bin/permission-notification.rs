@@ -67,7 +67,8 @@ fn main() -> io::Result<()> {
         ("Message", message.as_str()),
     ];
 
-    if let Err(err) = post_to_slack_rich(slack_title, &slack_fields) {
+    let iterm2_url = build_iterm2_url_scheme();
+    if let Err(err) = post_to_slack_rich(slack_title, &slack_fields, iterm2_url.as_deref()) {
         eprintln!("Slack notification failed: {}", err);
     }
 
