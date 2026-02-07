@@ -12,6 +12,13 @@ fn main() -> io::Result<()> {
     // ディレクトリ名取得
     let dir_name = get_dir_name(&input.cwd);
 
+    // ブランチ名取得
+    let branch_name = get_git_branch(&input.cwd);
+    let branch_suffix = branch_name
+        .as_ref()
+        .map(|b| format!(" [{}]", b))
+        .unwrap_or_default();
+
     // アクティベーション用Bundle ID取得
     let activation_bundle_id = get_activation_bundle_id();
 
@@ -19,7 +26,7 @@ fn main() -> io::Result<()> {
     let (title, subtitle, message) = match input.notification_type.as_deref() {
         Some("idle_prompt") => {
             // アイドル通知（60秒以上待機）
-            let title = format!("Claude Code - 入力待ち ({})", dir_name);
+            let title = format!("Claude Code - 入力待ち ({}){}", dir_name, branch_suffix);
             let subtitle = "⏱️ アイドル状態".to_string();
             let message = input.message.unwrap_or_else(|| "入力を待っています".to_string());
             (title, subtitle, message)
@@ -28,7 +35,7 @@ fn main() -> io::Result<()> {
             // ツール実行の許可リクエスト（従来の動作）
             if let (Some(tool_name), Some(tool_input)) = (&input.tool_name, &input.tool_input) {
                 let (subtitle, message) = build_tool_message(tool_name, tool_input, &input.cwd);
-                let title = format!("Claude Code - 確認待ち ({})", dir_name);
+                let title = format!("Claude Code - 確認待ち ({}){}", dir_name, branch_suffix);
                 (title, subtitle, message)
             } else {
                 // tool_nameもtool_inputもない場合はスキップ（通知を送らない）
@@ -37,7 +44,7 @@ fn main() -> io::Result<()> {
         }
         Some(other_type) => {
             // その他の通知タイプ
-            let title = format!("Claude Code - 通知 ({})", dir_name);
+            let title = format!("Claude Code - 通知 ({}){}", dir_name, branch_suffix);
             let subtitle = format!("📢 {}", other_type);
             let message = input.message.unwrap_or_else(|| "通知".to_string());
             (title, subtitle, message)
@@ -60,9 +67,11 @@ fn main() -> io::Result<()> {
         _ => "📢 Claude Code - Notification",
     };
 
+    let branch_display = branch_name.as_deref().unwrap_or("N/A");
     let slack_fields = vec![
         ("Session ID", input.session_id.as_str()),
         ("Directory", dir_name.as_str()),
+        ("Branch", branch_display),
         ("Type", subtitle.as_str()),
         ("Message", message.as_str()),
     ];

@@ -12,6 +12,10 @@ fn main() -> io::Result<()> {
 
     let dir_name = get_dir_name(&input.cwd);
 
+    // ブランチ名取得
+    let branch_name = get_git_branch(&input.cwd);
+    let branch_display = branch_name.as_deref().unwrap_or("N/A");
+
     // ~/.claude/plans/ から最新の .md ファイルを取得
     let plan_content = get_latest_plan_content().unwrap_or_else(|| "Plan file not found".to_string());
 
@@ -19,6 +23,7 @@ fn main() -> io::Result<()> {
     let fields = vec![
         ("Session ID", input.session_id.as_str()),
         ("Directory", dir_name.as_str()),
+        ("Branch", branch_display),
         ("Plan Content", plan_content.as_str()),
     ];
 

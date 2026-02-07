@@ -10,6 +10,10 @@ fn main() -> io::Result<()> {
 
     let dir_name = get_dir_name(&input.cwd);
 
+    // ブランチ名取得
+    let branch_name = get_git_branch(&input.cwd);
+    let branch_display = branch_name.as_deref().unwrap_or("N/A");
+
     // tool_input から質問とオプションを抽出
     let questions_info = extract_questions_with_options(&input.tool_input);
 
@@ -17,6 +21,7 @@ fn main() -> io::Result<()> {
     let fields = vec![
         ("Session ID", input.session_id.as_str()),
         ("Directory", dir_name.as_str()),
+        ("Branch", branch_display),
         ("Questions", questions_info.as_str()),
     ];
 

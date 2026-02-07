@@ -12,11 +12,16 @@ fn main() -> io::Result<()> {
     // ディレクトリ名を取得
     let dir_name = get_dir_name(&input.cwd);
 
+    // ブランチ名取得
+    let branch_name = get_git_branch(&input.cwd);
+    let branch_display = branch_name.as_deref().unwrap_or("N/A");
+
     // Slackに通知
     let title = "🤔 New Claude Prompt";
     let fields = vec![
         ("Session ID", input.session_id.as_str()),
         ("Directory", dir_name.as_str()),
+        ("Branch", branch_display),
         ("Permission Mode", input.permission_mode.as_str()),
         ("Prompt", input.prompt.as_str()),
     ];
