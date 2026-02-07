@@ -311,8 +311,9 @@ pub fn build_iterm2_url_scheme() -> Option<String> {
         return None;
     }
 
-    let cmd = build_iterm2_osascript(guid);
-    Some(format!("iterm2://command?c={}&silent", url_encode(&cmd)))
+    let home = env::var("HOME").ok()?;
+    let cmd = format!("{home}/.claude/bin/iterm2-switch-session.sh {guid}");
+    Some(format!("iterm2://command?c={}", url_encode(&cmd)))
 }
 
 // ===== ユーティリティ =====
