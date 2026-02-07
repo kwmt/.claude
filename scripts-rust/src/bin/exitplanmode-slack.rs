@@ -14,12 +14,16 @@ fn main() -> io::Result<()> {
 
     // ブランチ名取得
     let branch_name = get_git_branch(&input.cwd);
+    let branch_suffix = branch_name
+        .as_ref()
+        .map(|b| format!(" [{}]", b))
+        .unwrap_or_default();
     let branch_display = branch_name.as_deref().unwrap_or("N/A");
 
     // ~/.claude/plans/ から最新の .md ファイルを取得
     let plan_content = get_latest_plan_content().unwrap_or_else(|| "Plan file not found".to_string());
 
-    let title = "📋 Plan Ready for Review";
+    let title = format!("📋 Plan Ready for Review{}", branch_suffix);
     let fields = vec![
         ("Session ID", input.session_id.as_str()),
         ("Directory", dir_name.as_str()),
@@ -28,7 +32,7 @@ fn main() -> io::Result<()> {
     ];
 
     let iterm2_url = build_iterm2_url_scheme();
-    if let Err(err) = post_to_slack_rich(title, &fields, iterm2_url.as_deref()) {
+    if let Err(err) = post_to_slack_rich(&title, &fields, iterm2_url.as_deref()) {
         eprintln!("Slack notification failed: {}", err);
     }
 
