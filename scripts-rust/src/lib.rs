@@ -289,31 +289,13 @@ fn build_iterm2_osascript(guid: &str) -> String {
     )
 }
 
-fn url_encode(input: &str) -> String {
-    let mut encoded = String::new();
-    for byte in input.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
-                encoded.push(byte as char);
-            }
-            _ => {
-                encoded.push_str(&format!("%{:02X}", byte));
-            }
-        }
-    }
-    encoded
-}
-
 pub fn build_iterm2_url_scheme() -> Option<String> {
     let session_id = env::var("ITERM_SESSION_ID").ok()?;
     let guid = session_id.split(':').nth(1)?;
     if guid.is_empty() {
         return None;
     }
-
-    let home = env::var("HOME").ok()?;
-    let cmd = format!("{home}/.claude/bin/iterm2-switch-session.sh {guid}");
-    Some(format!("iterm2://command?c={}", url_encode(&cmd)))
+    Some(format!("x-claude-iterm://switch?guid={}", guid))
 }
 
 // ===== ユーティリティ =====
