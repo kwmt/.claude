@@ -493,16 +493,14 @@ pub fn post_to_slack_rich(title: &str, fields: &[(&str, &str)], button_url: Opti
         }));
     }
 
-    // iTerm2で開くボタン
+    // iTerm2で開くリンク（Incoming Webhookはactionsブロック非対応のためsectionで実装）
     if let Some(url) = button_url {
         blocks.push(ureq::json!({
-            "type": "actions",
-            "elements": [{
-                "type": "button",
-                "text": { "type": "plain_text", "text": "iTerm2 で開く" },
-                "url": url,
-                "action_id": "open_iterm2"
-            }]
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": format!(":computer: <{}|iTerm2 で開く>", url)
+            }
         }));
     }
 
