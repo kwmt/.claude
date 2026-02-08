@@ -28,6 +28,45 @@ xattr -dr com.apple.quarantine "$APP_PATH" 2>/dev/null
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP_PATH"
 
 echo "iTerm2Switch.app created and registered for x-claude-iterm:// URL scheme"
+
+# 6. LaunchAgentを生成・登録（ログイン時に自動で再登録されるようにする）
+# plistが既に存在する場合はスキップ（launchdからの実行時に無限ループを防止）
+LAUNCHAGENT_DIR="$HOME/Library/LaunchAgents"
+LAUNCHAGENT_PLIST="$LAUNCHAGENT_DIR/com.claude.iterm2-url-handler.plist"
+
+if [ ! -f "$LAUNCHAGENT_PLIST" ]; then
+    mkdir -p "$LAUNCHAGENT_DIR"
+
+    cat > "$LAUNCHAGENT_PLIST" <<PLIST_EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.claude.iterm2-url-handler</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>${SCRIPT_DIR}/setup-iterm2-url-handler.sh</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/claude-iterm2-setup.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/claude-iterm2-setup.log</string>
+</dict>
+</plist>
+PLIST_EOF
+
+    launchctl bootstrap "gui/$(id -u)" "$LAUNCHAGENT_PLIST" 2>/dev/null
+    echo ""
+    echo "LaunchAgentを登録しました（macOS起動時に自動で再実行されます）"
+else
+    echo ""
+    echo "LaunchAgentは登録済みです"
+fi
+
 echo ""
 echo "初回のみ: Automation権限の許可が必要です。"
 echo "「システム設定 > プライバシーとセキュリティ > オートメーション」で"

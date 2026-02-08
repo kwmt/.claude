@@ -74,6 +74,21 @@ iTerm2がアクティブになり、正しいタブ/セッションに切り替�
 2. `x-claude-iterm://` URLスキームをInfo.plistに登録
 3. コード署名とQuarantine属性の削除
 4. macOS LaunchServicesにURLスキームを登録
+5. LaunchAgentを生成・登録（macOS起動時に自動で再実行）
+
+#### macOS起動時の自動登録
+
+Mac再起動後にURLスキーム登録が失われることがあります。セットアップスクリプトを実行すると、LaunchAgentが自動で生成・登録され、ログイン時に再登録されるようになります（追加の手順は不要です）。
+
+登録状態の確認:
+```bash
+launchctl list | grep com.claude.iterm2
+```
+
+解除する場合:
+```bash
+launchctl bootout gui/$(id -u)/com.claude.iterm2-url-handler
+```
 
 #### 初回のAutomation権限許可
 
