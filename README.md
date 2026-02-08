@@ -69,6 +69,25 @@ iTerm2がアクティブになり、正しいタブ/セッションに切り替�
 ~/.claude/bin/setup-iterm2-url-handler.sh
 ```
 
+#### macOS起動時の自動登録（推奨）
+
+Mac再起動後にURLスキーム登録が失われることがあります。LaunchAgentを使って、ログイン時に自動で再登録されるようにできます:
+
+```bash
+# LaunchAgentの登録（初回のみ）
+launchctl load ~/Library/LaunchAgents/com.claude.iterm2-url-handler.plist
+```
+
+登録状態の確認:
+```bash
+launchctl list | grep com.claude.iterm2
+```
+
+解除する場合:
+```bash
+launchctl unload ~/Library/LaunchAgents/com.claude.iterm2-url-handler.plist
+```
+
 このスクリプトは以下を行います:
 1. AppleScriptをアプリ（`iTerm2Switch.app`）にコンパイル
 2. `x-claude-iterm://` URLスキームをInfo.plistに登録
