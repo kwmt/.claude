@@ -5,7 +5,10 @@
 2. issueの種類（バグ修正、機能追加、リファクタリング等）・規模・影響範囲を把握する
 
 ## Phase 2: ブランチ作成
-- 現在のブランチが main, staging, develop のいずれかの場合は `/create-branch` を実行する
+- 現在のブランチが main, staging, develop のいずれかの場合:
+  1. ユーザーに作業方法を確認する（通常のブランチ作成 or worktree で作業）
+  2. 通常のブランチ作成の場合: `/create-branch` を実行する
+  3. worktree の場合: `/worktree <ブランチ名>` を実行し、作成された worktree ディレクトリで以降の作業を行う
 
 ## Phase 3: エージェントチーム作成
 issueの内容を解釈し、適切なエージェントチームを構成する。
