@@ -31,8 +31,8 @@ fn main() -> io::Result<()> {
         })
         .unwrap_or_else(|| "N/A".to_string());
 
-    // tool_response からユーザー回答を抽出
-    let answer = extract_answer_from_response(&input.tool_response);
+    // ユーザー回答を抽出（tool_input.answers → tool_response.answers の順で試行）
+    let answer = extract_answer(&input.tool_input, &input.tool_response);
 
     let title = format!("💬 AskUserQuestion Response{}", branch_suffix);
     let fields = vec![
@@ -51,19 +51,54 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn extract_answer_from_response(response: &serde_json::Value) -> String {
-    // tool_response の構造に応じて回答を抽出
-    // 想定: { "answers": { "question_text": "answer_text" } } 形式
-    if let Some(answers) = response.get("answers").and_then(|a| a.as_object()) {
-        answers
-            .values()
-            .filter_map(|v| v.as_str())
-            .collect::<Vec<_>>()
-            .join(", ")
-    } else if let Some(s) = response.as_str() {
-        s.to_string()
-    } else {
-        response.to_string()
+/// tool_input.answers と tool_response の両方から回答を抽出
+fn extract_answer(tool_input: &serde_json::Value, tool_response: &serde_json::Value) -> String {
+    // 1. tool_input.answers から抽出（最も構造化されたデータ）
+    if let Some(answer) = extract_from_answers_field(tool_input) {
+        return answer;
     }
+
+    // 2. tool_response.answers から抽出
+    if let Some(answer) = extract_from_answers_field(tool_response) {
+        return answer;
+    }
+
+    // 3. tool_response が文字列の場合
+    if let Some(s) = tool_response.as_str() {
+        return s.to_string();
+    }
+
+    // 4. tool_response が配列の場合（content blocks 形式）
+    if let Some(arr) = tool_response.as_array() {
+        let texts: Vec<&str> = arr
+            .iter()
+            .filter_map(|item| {
+                if item.get("type").and_then(|t| t.as_str()) == Some("text") {
+                    item.get("text").and_then(|t| t.as_str())
+                } else {
+                    item.as_str()
+                }
+            })
+            .collect();
+        if !texts.is_empty() {
+            return texts.join("\n");
+        }
+    }
+
+    // 5. フォールバック
+    tool_response.to_string()
 }
 
+/// JSON値の "answers" フィールドから回答文字列を抽出
+fn extract_from_answers_field(value: &serde_json::Value) -> Option<String> {
+    let answers = value.get("answers")?.as_object()?;
+    let extracted: Vec<String> = answers
+        .values()
+        .map(|v| v.as_str().map(String::from).unwrap_or_else(|| v.to_string()))
+        .collect();
+    if extracted.is_empty() {
+        None
+    } else {
+        Some(extracted.join(", "))
+    }
+}
