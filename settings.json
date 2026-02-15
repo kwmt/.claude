@@ -1,5 +1,11 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
   "permissions": {
+    "allow": [
+      "mcp__pencil"
+    ],
     "deny": [
       "Bash(git config:*)",
       "Bash(brew install:*)",
@@ -7,10 +13,7 @@
       "Bash(rm -rf /*)",
       "Bash(gh repo delete:*)"
     ],
-    "defaultMode": "bypassPermissions",
-    "allow": [
-      "mcp__pencil"
-    ]
+    "defaultMode": "bypassPermissions"
   },
   "model": "opus",
   "hooks": {
@@ -114,8 +117,6 @@
   "enabledPlugins": {
     "swift-lsp@claude-plugins-official": true
   },
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-  },
+  "skipDangerousModePermissionPrompt": true,
   "teammateMode": "tmux"
 }
