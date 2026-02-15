@@ -28,6 +28,16 @@ fn main() -> io::Result<()> {
         .map(|b| format!("[{}] ", b))
         .unwrap_or_default();
 
+    // デバッグログ: 受信した通知内容を記録
+    debug_log(
+        "permission-notification",
+        &format!(
+            "notification_type={:?}, tool_name={:?}, message={:?}",
+            input.notification_type, input.tool_name,
+            input.message.as_deref().map(|m| if m.len() > 100 { &m[..100] } else { m })
+        ),
+    );
+
     // 通知タイプに応じてメッセージを生成
     let (title, subtitle, message) = match input.notification_type.as_deref() {
         Some("idle_prompt") => {
@@ -50,10 +60,17 @@ fn main() -> io::Result<()> {
             }
         }
         Some(other_type) => {
-            // その他の通知タイプ
+            // その他の通知タイプ: プラン関連の場合はプラン内容を表示
             let title = format!("Claude Code - 通知 ({})", dir_name);
             let subtitle = format!("{}📢 {}", branch_prefix, other_type);
-            let message = input.message.unwrap_or_else(|| "通知".to_string());
+
+            // プラン承認系の通知の場合、プラン内容を表示
+            let message = if other_type.contains("plan") || other_type.contains("exit") {
+                get_plan_summary_for_notification()
+                    .unwrap_or_else(|| input.message.unwrap_or_else(|| "通知".to_string()))
+            } else {
+                input.message.unwrap_or_else(|| "通知".to_string())
+            };
             (title, subtitle, message)
         }
     };
@@ -169,6 +186,23 @@ fn build_tool_message(
                 .and_then(|v| v.as_str())
                 .unwrap_or("");
             let message = format!("タイプ: {}", subagent);
+            (subtitle, message)
+        }
+        "ExitPlanMode" => {
+            let subtitle = "📋 プラン承認待ち".to_string();
+            let message = get_plan_summary_for_notification()
+                .unwrap_or_else(|| "プランのレビューが必要です".to_string());
+            (subtitle, message)
+        }
+        "AskUserQuestion" => {
+            let subtitle = "❓ 質問があります".to_string();
+            let message = extract_questions_with_options(tool_input);
+            // macOS通知向けに短縮
+            let message = if message.len() > 200 {
+                format!("{}...", &message[..200])
+            } else {
+                message
+            };
             (subtitle, message)
         }
         _ => {

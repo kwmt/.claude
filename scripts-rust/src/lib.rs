@@ -513,6 +513,118 @@ pub fn post_to_slack_rich(title: &str, fields: &[(&str, &str)], button_url: Opti
         .map_err(|e| format!("Slack POST failed: {}", e))
 }
 
+// ===== プラン関連 =====
+
+/// ~/.claude/plans/ から最新の .md ファイルの内容を取得
+pub fn get_latest_plan_content() -> Option<String> {
+    let home = std::env::var("HOME").ok()?;
+    let plans_dir = std::path::PathBuf::from(&home).join(".claude/plans");
+
+    if !plans_dir.exists() {
+        return None;
+    }
+
+    // .md ファイルを取得し、更新日時でソート
+    let mut md_files: Vec<_> = fs::read_dir(&plans_dir)
+        .ok()?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry
+                .path()
+                .extension()
+                .and_then(|s| s.to_str())
+                .map(|s| s == "md")
+                .unwrap_or(false)
+        })
+        .collect();
+
+    md_files.sort_by_key(|entry| {
+        entry
+            .metadata()
+            .and_then(|m| m.modified())
+            .ok()
+            .map(std::cmp::Reverse)
+    });
+
+    // 最新のファイルを読み込み
+    let latest_file = md_files.first()?;
+    let content = fs::read_to_string(latest_file.path()).ok()?;
+
+    Some(truncate_content(&content))
+}
+
+/// macOS通知用にプラン内容を短く要約（最初の数行のみ）
+pub fn get_plan_summary_for_notification() -> Option<String> {
+    let home = std::env::var("HOME").ok()?;
+    let plans_dir = std::path::PathBuf::from(&home).join(".claude/plans");
+
+    if !plans_dir.exists() {
+        return None;
+    }
+
+    let mut md_files: Vec<_> = fs::read_dir(&plans_dir)
+        .ok()?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry
+                .path()
+                .extension()
+                .and_then(|s| s.to_str())
+                .map(|s| s == "md")
+                .unwrap_or(false)
+        })
+        .collect();
+
+    md_files.sort_by_key(|entry| {
+        entry
+            .metadata()
+            .and_then(|m| m.modified())
+            .ok()
+            .map(std::cmp::Reverse)
+    });
+
+    let latest_file = md_files.first()?;
+    let content = fs::read_to_string(latest_file.path()).ok()?;
+
+    // macOS通知用: 最初の3行（空行除く）を取得
+    let summary: String = content
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .take(3)
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    if summary.is_empty() {
+        None
+    } else if summary.len() > 200 {
+        Some(format!("{}...", &summary[..200]))
+    } else {
+        Some(summary)
+    }
+}
+
+// ===== デバッグログ =====
+
+/// デバッグ情報をファイルに記録
+pub fn debug_log(context: &str, message: &str) {
+    use std::fs::OpenOptions;
+    use std::io::Write;
+
+    let Ok(home) = env::var("HOME") else { return };
+    let log_path = Path::new(&home).join(".claude/hook-debug.log");
+
+    let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(log_path)
+    else {
+        return;
+    };
+
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
+    let _ = writeln!(file, "[{}] [{}] {}", timestamp, context, message);
+}
+
 // ===== コンテンツ処理 =====
 
 /// コンテンツを指定の長さで切り詰める
