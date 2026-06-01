@@ -2,6 +2,11 @@ use claude_hooks::*;
 use std::io::{self, Read};
 
 fn main() -> io::Result<()> {
+    // チームメンバーの場合は通知をスキップ
+    if is_team_member() {
+        return Ok(());
+    }
+
     // 標準入力からJSON読み込み
     let mut input_str = String::new();
     io::stdin().read_to_string(&mut input_str)?;

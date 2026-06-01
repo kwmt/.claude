@@ -5,6 +5,24 @@ use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+// ===== チーム設定の型定義 =====
+
+#[derive(Deserialize, Debug)]
+pub struct TeamConfig {
+    #[serde(rename = "leadAgentId")]
+    pub lead_agent_id: String,
+    pub members: Vec<TeamMember>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TeamMember {
+    #[serde(rename = "agentId")]
+    pub agent_id: String,
+    pub name: String,
+    #[serde(rename = "tmuxPaneId", default)]
+    pub tmux_pane_id: String,
+}
+
 // ===== 型定義 =====
 
 #[derive(Deserialize, Debug)]
@@ -296,6 +314,54 @@ pub fn build_iterm2_url_scheme() -> Option<String> {
         return None;
     }
     Some(format!("x-claude-iterm://switch?guid={}", guid))
+}
+
+// ===== チームメンバー判定 =====
+
+/// 現在のプロセスがチームメンバー（リーダーではない）かを判定
+pub fn is_team_member() -> bool {
+    // 1. ITERM_SESSION_ID からGUID抽出 (形式: "w0t0p0:GUID")
+    let guid = match env::var("ITERM_SESSION_ID") {
+        Ok(session_id) => match session_id.split(':').nth(1) {
+            Some(g) if !g.is_empty() => g.to_string(),
+            _ => return false,
+        },
+        Err(_) => return false,
+    };
+
+    // 2. ~/.claude/teams/*/config.json を読み込み
+    let home = match env::var("HOME") {
+        Ok(h) => h,
+        Err(_) => return false,
+    };
+    let teams_dir = Path::new(&home).join(".claude/teams");
+    if !teams_dir.exists() {
+        return false;
+    }
+
+    // 3. 各チーム設定ファイルのメンバーの tmuxPaneId と照合
+    let configs = match fs::read_dir(&teams_dir) {
+        Ok(entries) => entries,
+        Err(_) => return false,
+    };
+
+    for entry in configs.flatten() {
+        let config_path = entry.path().join("config.json");
+        if !config_path.exists() {
+            continue;
+        }
+        if let Ok(content) = fs::read_to_string(&config_path) {
+            if let Ok(config) = serde_json::from_str::<TeamConfig>(&content) {
+                for member in &config.members {
+                    if member.tmux_pane_id == guid {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    false
 }
 
 // ===== ユーティリティ =====
