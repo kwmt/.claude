@@ -13,7 +13,7 @@
       "Bash(rm -rf /*)",
       "Bash(gh repo delete:*)"
     ],
-    "defaultMode": "bypassPermissions"
+    "defaultMode": "auto"
   },
   "model": "opus[1m]",
   "hooks": {
@@ -119,7 +119,9 @@
     "slack@claude-plugins-official": true,
     "ruby-lsp@claude-plugins-official": true,
     "example-skills@anthropic-agent-skills": true,
-    "document-skills@anthropic-agent-skills": true
+    "document-skills@anthropic-agent-skills": true,
+    "discord@claude-plugins-official": true,
+    "firebase@firebase": true
   },
   "extraKnownMarketplaces": {
     "anthropic-agent-skills": {
@@ -127,8 +129,16 @@
         "source": "github",
         "repo": "anthropics/skills"
       }
+    },
+    "firebase": {
+      "source": {
+        "source": "github",
+        "repo": "firebase/firebase-tools"
+      }
     }
   },
   "skipDangerousModePermissionPrompt": true,
-  "teammateMode": "tmux"
+  "teammateMode": "tmux",
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true
 }
