@@ -42,9 +42,13 @@ fi
 OWNER="${REPO%%/*}" ; NAME="${REPO##*/}"
 
 if [ -z "$PR" ]; then
-  # PR が無いブランチでは gh が非ゼロで落ちる。これは異常ではなく「まだ PR が無い」状態。
+  # このスキルを使う時点で PR は既にあるはずなので、ここで落ちるのは
+  # 「PR が無い」ではなく「今いるブランチから PR を引けない」状態。
   PR=$(gh pr view --json number -q .number 2>/dev/null) || {
-    echo "現在のブランチに PR が無い。PR 番号を明示するか、先に PR を作る" >&2 ; exit 2 ; }
+    echo "現在のブランチ ($(git branch --show-current 2>/dev/null)) から PR を特定できない。" >&2
+    echo "PR 番号を引数で渡すか、PR の head ブランチに切り替える。" >&2
+    echo "別リポジトリの PR なら --repo OWNER/NAME も渡す。" >&2
+    exit 2 ; }
 fi
 
 case "$PR"    in ''|*[!0-9]*) echo "PR 番号が数値でない: $PR" >&2 ; exit 64 ;; esac
