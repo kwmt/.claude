@@ -1,5 +1,14 @@
 日本語で説明してください。
 
+## Coding Rules
+
+- コードに無いもの（削除した処理・あえて追加しなかった設定など）の不在を説明するコメントは書かない。コメントは存在するコードの非自明な「なぜ」のみに限定する。
+
+## GitHub Comment Rules
+
+- AI（Claude）が GitHub の PR/Issue にコメントや返信を書くときは、本文末尾に必ず次の1行を付ける:
+  `— 🤖 この返信は AI が作成しました`
+
 ## Git Workflow Rules
 
 plan modeから実行モードに切り替える際、現在のブランチが main, develop, staging のいずれかである場合:
