@@ -15,28 +15,8 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
+  "model": "fable",
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/scripts/deny-check.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/bin/format-tool-display"
-          }
-        ]
-      }
-    ],
     "Notification": [
       {
         "matcher": "idle_prompt",
@@ -50,6 +30,14 @@
             "command": "~/.claude/bin/permission-notification"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.config/iterm2/cc-status"
+          }
+        ]
       }
     ],
     "PermissionRequest": [
@@ -61,26 +49,12 @@
             "command": "~/.claude/bin/permission-notification"
           }
         ]
-      }
-    ],
-    "Stop": [
+      },
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/bin/task-complete-notification"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/bin/user-prompt-slack"
+            "command": "~/.config/iterm2/cc-status"
           }
         ]
       }
@@ -107,6 +81,120 @@
             "command": "~/.claude/bin/askuser-answer-slack"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.config/iterm2/cc-status"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/deny-check.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/bin/format-tool-display"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.config/iterm2/cc-status"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.config/iterm2/cc-status"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.config/iterm2/cc-status"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/bin/task-complete-notification"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.config/iterm2/cc-status"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.config/iterm2/cc-status"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.config/iterm2/cc-status"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/bin/user-prompt-slack"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.config/iterm2/cc-status"
+          }
+        ]
       }
     ]
   },
@@ -115,13 +203,14 @@
     "command": "node ~/.claude/statusline.js"
   },
   "enabledPlugins": {
-    "swift-lsp@claude-plugins-official": true,
-    "slack@claude-plugins-official": true,
-    "ruby-lsp@claude-plugins-official": true,
-    "example-skills@anthropic-agent-skills": true,
-    "document-skills@anthropic-agent-skills": true,
     "discord@claude-plugins-official": true,
-    "firebase@firebase": true
+    "document-skills@anthropic-agent-skills": true,
+    "example-skills@anthropic-agent-skills": true,
+    "firebase@firebase": true,
+    "ruby-lsp@claude-plugins-official": true,
+    "slack@claude-plugins-official": true,
+    "swift-lsp@claude-plugins-official": true,
+    "android-cli@android-cli-plugin": true
   },
   "extraKnownMarketplaces": {
     "anthropic-agent-skills": {
@@ -135,10 +224,64 @@
         "source": "github",
         "repo": "firebase/firebase-tools"
       }
+    },
+    "android-cli-plugin": {
+      "source": {
+        "source": "github",
+        "repo": "android/android-cli-plugin"
+      }
     }
   },
+  "sandbox": {
+    "enabled": true
+  },
   "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
   "teammateMode": "tmux",
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "autoMode": {
+    "environment": [
+      "### Org-wide",
+      "**Organization**: None configured",
+      "**Cloud provider(s)**: None configured",
+      "**Repository visibility**: PUBLIC — kwmt/.claude (github.com:kwmt/.claude.git) — any push here is publishing",
+      "**Internal sharing / snippet hosting**: None configured — treat public paste/gist services as outside the trust boundary",
+      "**Secrets management**: None configured",
+      "**Default / protected branches**: main (default); no rulesets or protected branches listed via gh — but per Git Workflow Rules in CLAUDE.md, work should branch off main/develop/staging before executing, with PRs opened for merge",
+      "**CI/CD deploy targets**: None configured",
+      "**Network posture**: None configured",
+      "**Host containment**: None configured — assume Claude Code runs on an ordinary developer machine with open internet",
+      "**Source control**: The trusted repo (kwmt/.claude, github.com:kwmt/.claude.git) and its remote(s) only (no additional orgs configured)",
+      "**Trusted internal domains**: None configured",
+      "**Trusted cloud buckets**: None configured",
+      "**Key internal services**: None configured",
+      "**Internal package registry**: None configured",
+      "**Sensitive data locations & audiences**: any file or store holding personal data, confidential business data, credentials, regulated data, or similarly sensitive material; preserve exact handles when known and share only with audiences cleared at the [named+specifics] bar — note: .env, .env.local, .env.*.local are gitignored in this repo, indicating local secrets should never be committed to this public repo",
+      "**Data retention / declassification**: None configured",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment",
+      "**Protected deployment namespaces / environments**: None configured — fall back to the Sensitive remote targets heuristic",
+      "**Protected IaC scopes**: IAM, RBAC, networking, quota, and node-pool resources; anything whose name or tag carries `prod` or `production` as a whole word or name segment",
+      "**Repository visibility**: PUBLIC — kwmt/.claude (github.com:kwmt/.claude.git)",
+      "**Default / protected branches**: main (default); no rulesets or protected branches listed via gh for kwmt/.claude",
+      "**Host containment**: None configured — assume Claude Code runs on an ordinary developer machine or CI runner with open internet",
+      "**Source control**: The trusted repo (kwmt/.claude) and its origin remote only (no additional orgs configured)",
+      "**Sensitive data locations & audiences**: any file or store holding personal data, confidential business data, credentials, regulated data, or similarly sensitive material; preserve exact handles when known and share only with audiences cleared at the [named+specifics] bar; note .gitignore excludes .env, .env.local, .env.*.local from this public repo",
+      "**Repository visibility**: PUBLIC — kwmt/.claude (repo has no rulesets or classic protected branches listed)",
+      "**Default / protected branches**: Default branch is main; no protected branches or rulesets listed via gh",
+      "**Source control**: The trusted repo (kwmt/.claude on github.com) and its remote(s) only (no additional orgs configured)",
+      "**Sensitive data locations & audiences**: any file or store holding personal data, confidential business data, credentials, regulated data, or similarly sensitive material; preserve exact handles when known and share only with audiences cleared at the [named+specifics] bar — note .gitignore excludes .env, .env.local, .env.*.local, suggesting local secrets files exist in this repo's working tree",
+      "**Sensitive remote targets**: any namespace, host, or container whose name carries `prod` or `production` as a whole word or name segment (hyphen/underscore/dot-delimited)",
+      "### User-specific",
+      "**Primary use of Claude Code**: software development (Claude Code customization/configuration — notifications, hooks, git workflow automation)",
+      "**Trusted repo**: kwmt/.claude (github.com:kwmt/.claude.git) — PUBLIC repo; only this repo's own work should be committed/pushed here, no confidential or sensitive material",
+      "**Org-specific CLIs**: None configured",
+      "routine under this repo's working directory is expected for git, notification scripts, and config file edits",
+      "**Primary use of Claude Code**: software development (personal Claude Code configuration/customization tooling)",
+      "**Trusted repo**: kwmt/.claude (public) — this repo's origin remote; since it is PUBLIC, only this repo's own work should be pushed there — no content ported from other repos or sessions, and secrets/sensitive data are never cleared into it by visibility alone",
+      "routine under kwmt/.claude prefix: git and file operations scoped to this repo's working tree are considered routine",
+      "**Primary use of Claude Code**: software development (personal Claude Code configuration/tooling repo — notification scripts, workflow rules)",
+      "**Trusted repo**: kwmt/.claude (github.com:kwmt/.claude.git) — this repo is PUBLIC, so only this repo's own work belongs in commits/pushes here; do not port in content from other repos or sensitive data"
+    ]
+  }
 }
