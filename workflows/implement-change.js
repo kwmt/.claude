@@ -132,7 +132,7 @@ const SCOUT_SCHEMA = {
   required: [
     'mode', 'scale', 'scaleReason', 'stack', 'startSha', 'currentBranch', 'onProtectedBranch',
     'suggestedBranch', 'blockers', 'conventionSources', 'conventionNotes', 'commitConvention',
-    'commands', 'slowCommands', 'relatedFiles',
+    'commands', 'slowCommands', 'relatedFiles', 'openQuestions',
   ],
   properties: {
     mode: { type: 'string', enum: ['feature', 'refactor'], description: '振る舞いを増やす/変えるなら feature、振る舞いを保ったまま構造を変えるなら refactor' },
@@ -144,8 +144,9 @@ const SCOUT_SCHEMA = {
     onProtectedBranch: { type: 'boolean', description: '現在のブランチが、直接コミットすべきでないブランチ (既定ブランチ、PR のマージ先、main / master / develop / staging / release 系、保護設定のあるもの) かどうか' },
     suggestedBranch: { type: 'string', description: 'feat/xxx や refactor/xxx 形式の作業ブランチ名。英小文字・数字・ハイフンのみ。既存のブランチ名と重ならないもの' },
     blockers: { type: 'array', items: { type: 'string' }, description: 'このまま進めるべきでない理由。無ければ空配列' },
+    openQuestions: { type: 'array', items: { type: 'string' }, description: '仕様の未決事項のうち、設計段階で決めるか仮置きできるもの。無ければ空配列' },
     conventionSources: { type: 'array', items: { type: 'string' }, description: '規約が書かれたファイルのリポジトリ相対パス' },
-    conventionNotes: { type: 'string', description: 'このタスクに関係する規約と、隣接コードから読み取れる暗黙の慣習' },
+    conventionNotes: { type: 'string', description: 'このタスクに関係する規約と、隣接コードから読み取れる暗黙の慣習。このタスクをどう設計するかの判断は書かない (未定の点は openQuestions に書く)' },
     commitConvention: { type: 'string', description: 'プロジェクトのコミットメッセージ規約 (規約ファイル・commitlint 設定・直近の履歴から)。読み取れなければ空文字' },
     commands: {
       type: 'object',
@@ -182,7 +183,7 @@ const scout = await agent(
     `2. 暗黙の慣習: 変更対象になりそうなコードの隣接ファイルを読み、命名・配置・層構造・テストの書き方を要約する。\n` +
     `3. 検証コマンド: テスト・lint・型チェック・フォーマット・コード生成のコマンドを README、CI 設定、package.json / Makefile / pubspec などから特定する。対象を絞った実行方法 (testScoped) を必ず探す。該当が無い項目は空文字にする (推測で埋めない)。数分かかる・ハングしやすいコマンドは slowCommands に挙げる。\n` +
     `4. git の状態: \`git rev-parse HEAD\` の出力 (startSha)、現在のブランチ、それが直接コミットすべきでないブランチかどうか、作業ブランチ名の案、コミットメッセージの規約。\n` +
-    `5. blockers: 次に当たれば具体的に書く。git リポジトリではない / コミットが 1 つも無い / detached HEAD / 追跡対象ファイルに未コミットの変更がある (このワークフローのコミットに無関係な変更が混ざる) / やりたいことが曖昧すぎて設計できない。未追跡ファイルがあるだけなら blocker にしない。\n` +
+    `5. blockers: 次に当たれば具体的に書く。git リポジトリではない / コミットが 1 つも無い / detached HEAD / 追跡対象ファイルに未コミットの変更がある (このワークフローのコミットに無関係な変更が混ざる) / やりたいことが曖昧すぎて設計できない (何を作る・変えるのかが読み取れない場合に限る。細部が未定なだけなら blocker にせず openQuestions に書く)。未追跡ファイルがあるだけなら blocker にしない。直接コミットすべきでないブランチにいることも blocker にしない (onProtectedBranch で表す。作業ブランチは後段が切る)。\n` +
     `6. 関連ファイル: このタスクで読む・変更することになりそうなファイル。\n\n` +
     `判定:\n` +
     `- mode: ${requestedMode === 'auto' ? '外から観測できる振る舞いを増やす・変えるなら feature、振る舞いを保ったまま構造を変えるなら refactor。両方を含むなら feature。' : `呼び出し側の指定どおり ${requestedMode} を返す。`}\n` +
@@ -230,12 +231,15 @@ const REPO = [
 
 const TASK =
   `## やりたいこと (${isRefactor ? 'リファクタリング' : '機能実装'})\n${task}` +
-  (extraContext ? `\n\n## 追加情報\n${extraContext}` : '')
+  (extraContext ? `\n\n## 追加情報\n${extraContext}` : '') +
+  (scout.openQuestions.length
+    ? `\n\n## 未決事項 (Scout が挙げたもの。設計で決めるか、仮置きして openQuestions に残す)\n${scout.openQuestions.map((q) => `- ${q}`).join('\n')}`
+    : '')
 
 const COMMIT = [
   '## コミットの規則',
   scout.onProtectedBranch
-    ? `- 開始時のブランチ \`${scout.currentBranch}\` には直接コミットしない。作業ブランチ \`${workBranch}\` でコミットする。既にそのブランチにいればそのまま使い、無ければ現在の HEAD から作って切り替える。同名のブランチが別の履歴で既に存在する場合は、末尾に \`-2\` のような連番を付けた別名にする。既存のブランチを作り直す・上書きするオプション (\`-B\` / \`-C\` / \`--force\`) は使わない。`
+    ? `- まず \`git branch --show-current\` で現在のブランチを確かめる。作業ブランチ \`${workBranch}\` にいれば、そのままコミットする (前段が既に切り替えている場合がある)。\`${scout.currentBranch}\` (ワークフロー開始時のブランチ。直接コミットしない) にいれば、現在の HEAD から \`${workBranch}\` を作って切り替えてからコミットする。同名のブランチが別の履歴で既に存在する場合は、末尾に \`-2\` のような連番を付けた別名にする。既存のブランチを作り直す・上書きするオプション (\`-B\` / \`-C\` / \`--force\`) は使わない。`
     : `- 現在の作業ブランチのままコミットする。ブランチを切り替えない・作らない。`,
   scout.commitConvention
     ? `- コミットメッセージはこのプロジェクトの規約に従う: ${scout.commitConvention}`
@@ -600,7 +604,7 @@ const REFACTOR_REVIEW_NOTE = isRefactor
 const REVIEW_CONTEXT =
   `${TASK}\n\n${REPO}\n\n${DESIGN}\n\n` +
   `## レビュー対象\nこのワークフローが加えた変更全体。差分は \`${DIFF_CMD}\` で取る (コミット済み・未コミットの両方を含む)。` +
-  `未追跡のファイルはこの diff に現れないので、先に \`git status --short\` を見て、このワークフローが作ったと思われる未追跡ファイルがあれば直接 Read して対象に含める。`
+  `未追跡のファイルはこの diff に現れないので、先に \`git status --short\` を見て、未追跡ファイルのうち、確定設計の files に挙がっているパスか、その実装・テストとして作られたことが中身から明らかなものだけを、直接 Read して対象に含める (それ以外の未追跡ファイルは無関係として扱う)。`
 
 const reviewRound = await parallel(
   BUNDLES.map((lenses) => () =>
@@ -653,7 +657,8 @@ const record = (items) => {
 
 const TRIAGE_RULES =
   `${SELF_REVIEW_LOOP} を Read し、§1-2 の分類基準に従って各指摘を分類する。分類の前に必ず該当ファイルを自分で Read して真偽を確かめる。` +
-  `スキルが「ユーザーに聞く」としている、判断がつかない指摘は needs-user にする (このワークフローからは質問できないため)。勝手に dismiss しない。`
+  `指摘の line が実際の行とずれていたら、自分で確かめた行に直して返す。` +
+  `スキルが「ユーザーに聞く」としている、判断がつかない指摘は needs-user にする (このワークフローからは質問できないため)。コードを読む・テストを実行することで真偽を確かめられるものは、自分で判断して fix か dismiss にする。needs-user にするのは、リポジトリの外の事実 (本番のデータや運用、ユーザーの意図) が分からないと決められないものだけ。コメントやドキュメントの自己申告だけを却下の根拠にせず、コードの挙動で裏を取る。両方に当てはまるときの優先順位: blocker で、論点が「実在する秘匿値や個人情報がコミットされたか」のように外の事実そのものである場合は、コード上は無害だと確かめられても needs-user にする (誤って却下したときの害が大きい)。それ以外は、コードで確かめた結果で判断する。`
 
 let items = []
 if (!reviewed.length) {
@@ -665,7 +670,7 @@ if (!reviewed.length) {
   const triage = await agent(
     `${REVIEW_CONTEXT}\n\n` +
       `あなたはセルフレビューの指摘を集約・判定する担当。読み取り専用で、コードは変更しない。\n` +
-      `1. ${SELF_REVIEW} を Read し、§2 の手順で重複排除と信頼度フィルタを行う。blocker は、却下する場合も落とさずに dismiss として理由付きで返す。\n` +
+      `1. ${SELF_REVIEW} を Read し、§2 の手順で重複排除と信頼度フィルタを行う。blocker は、却下する場合も落とさずに dismiss として理由付きで返す。スキルは統合した指摘に観点を併記するとしているが、返り値の perspective は 1 つしか持てないので、統合した中で最も severity が高い指摘の観点を入れ (同じなら confidence が高いほう)、他の観点は reason に書く。信頼度フィルタで落とした blocker 以外の指摘は、返り値に含めない。\n` +
       `2. ${TRIAGE_RULES}\n` +
       `3. 残した各指摘の origin は review、previousId は空文字にする。\n` +
       `4. \`${DIFF_CMD} --shortstat\` を実行し、追加行数を addedLines に入れる。\n` +
@@ -719,8 +724,8 @@ while (!stop) {
   const fix = await agent(
     `${TASK}\n\n${REPO}\n\n${DESIGN}\n\n` +
       `あなたはセルフレビューで fix と判定された指摘を直す担当。\n` +
-      `${SELF_REVIEW_LOOP} を Read し、§1-3 (修正)・§1-4 (テストを実際に走らせる)・§1-5 (コミット) に従う。このワークフローでの補足:\n` +
-      `- 渡された指摘だけを直す。読んで誤検知だと判断したものは直さず、notFixed に理由を書く。fixed / notFixed の id は渡された id をそのまま使う。\n` +
+      `${SELF_REVIEW_LOOP} を Read し、§1-3 (修正)・§1-4 (テストを実際に走らせる)・§1-5 (コミット) に従う。スキルとこのプロンプトが食い違う点は、このプロンプトを優先する。特にコミットの書式と手順は下の「コミットの規則」が正で、スキルの「commit スキルを呼ぶ」「gitmoji」は、コミットの規則がそう指示している場合だけ適用する。このワークフローでの補足:\n` +
+      `- 渡された指摘だけを直す。直した挙動を確かめるテストの追加・更新は、修正の範囲に含む。読んで誤検知だと判断したものは直さず、notFixed に理由を書く。fixed / notFixed の id は渡された id をそのまま使う。\n` +
       (isRefactor ? `- リファクタリングの修正なので、外から観測できる振る舞いを変えない。\n${GUARDED_TESTS}` : '') +
       `- 検証が通らないままならコミットせず、validation.passed=false で返す。\n` +
       `- 通ったら、このラウンドの修正を 1 コミットにまとめる (新規ファイルも含める)。\n` +
@@ -884,7 +889,12 @@ return {
   models: Object.fromEntries(
     ['designDecide', 'implement', 'test', 'review', 'triage', 'fix'].map((s) => [s, `${stageModel(s).model}/${stageModel(s).effort}`]),
   ),
-  design: { summary: design.summary, invariants: design.invariants, openRisks: design.openRisks, openQuestions: design.openQuestions },
+  design: {
+    summary: design.summary,
+    invariants: design.invariants,
+    openRisks: design.openRisks,
+    openQuestions: [...scout.openQuestions, ...design.openQuestions],
+  },
   // 段ごとの検証結果。verified=false は、検証コマンドを 1 つも実行できていないことを表す。
   stages,
   behaviorPreservation,
