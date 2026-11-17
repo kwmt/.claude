@@ -36,3 +36,7 @@ package-lock.json
 
 ## Rust
 scripts-rust/target/
+
+
+# APM dependencies
+apm_modules/

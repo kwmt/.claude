@@ -1,0 +1,58 @@
+lockfile_version: '1'
+apm_version: 0.35.1
+dependencies:
+- repo_url: mizchi/skills
+  name: empirical-prompt-tuning
+  host: github.com
+  resolved_commit: 5a51332694840551613e4cb3812a2c3929bb738c
+  version: unknown
+  virtual_path: empirical-prompt-tuning
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .claude/skills/empirical-prompt-tuning
+  - .claude/skills/empirical-prompt-tuning/README.md
+  - .claude/skills/empirical-prompt-tuning/SKILL-ja.md
+  - .claude/skills/empirical-prompt-tuning/SKILL.md
+  deployed_file_hashes:
+    .claude/skills/empirical-prompt-tuning/README.md: sha256:5fc8e7774a7290497c941e46baeb2712731dd92a7ea2ddff75fecc9173ccc347
+    .claude/skills/empirical-prompt-tuning/SKILL-ja.md: sha256:0a58ca4405635a7e79944736b93a8844d0b08b65c95a1f09ad971a3e496e82a7
+    .claude/skills/empirical-prompt-tuning/SKILL.md: sha256:252418e7ef022981d2dda2e3ec57fa1c786d30af68c50b7e062edf1d7361b0cb
+  content_hash: sha256:2b864d197ac10283265fd7b881075278c84a9bf22267a5f704b2f7e3df449cd8
+deployments:
+- kind: project-relative
+  target: claude
+  value: .claude/skills/empirical-prompt-tuning
+  runtime: null
+  scope: project
+  owners:
+  - mizchi/skills/empirical-prompt-tuning
+  active_owner: mizchi/skills/empirical-prompt-tuning
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/empirical-prompt-tuning/README.md
+  runtime: null
+  scope: project
+  owners:
+  - mizchi/skills/empirical-prompt-tuning
+  active_owner: mizchi/skills/empirical-prompt-tuning
+  content_hash: sha256:5fc8e7774a7290497c941e46baeb2712731dd92a7ea2ddff75fecc9173ccc347
+- kind: project-relative
+  target: claude
+  value: .claude/skills/empirical-prompt-tuning/SKILL-ja.md
+  runtime: null
+  scope: project
+  owners:
+  - mizchi/skills/empirical-prompt-tuning
+  active_owner: mizchi/skills/empirical-prompt-tuning
+  content_hash: sha256:0a58ca4405635a7e79944736b93a8844d0b08b65c95a1f09ad971a3e496e82a7
+- kind: project-relative
+  target: claude
+  value: .claude/skills/empirical-prompt-tuning/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mizchi/skills/empirical-prompt-tuning
+  active_owner: mizchi/skills/empirical-prompt-tuning
+  content_hash: sha256:252418e7ef022981d2dda2e3ec57fa1c786d30af68c50b7e062edf1d7361b0cb
