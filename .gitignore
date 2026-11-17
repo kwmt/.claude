@@ -36,3 +36,8 @@ package-lock.json
 
 ## Rust
 scripts-rust/target/
+
+
+# APM がユーザースコープに配置する外部スキル
+# (~/.apm/apm.yml で管理。apm install -g で復元できる)
+skills/empirical-prompt-tuning/
