@@ -1,6 +1,6 @@
 ---
 description: ベースブランチ（develop / staging / main）を remote と同期し、作業ブランチを rebase する。マージ済みの作業ブランチは削除する。
-argument-hint: "[main|staging|develop] [switch]"
+argument-hint: "[main|staging|develop]"
 ---
 
 ベースブランチを remote と同期する。引数: `$ARGUMENTS`
@@ -10,25 +10,40 @@ argument-hint: "[main|staging|develop] [switch]"
 - 引数にブランチ名（`main` / `staging` / `stg` / `develop` など）があればそれを使う。`stg` は `staging` と読み替える。
 - 無ければ、origin に存在するものを `develop` → `staging` → `main` の順に探し、最初に見つかったものを使う。
 
-## 通常の動作
+## 手順
 
-1. remote のベースブランチを local と同期する。
-2. 今いるブランチがベースブランチ以外で、すでにマージ済み（squash マージを含む。PR の状態でも確かめる）なら、ベースブランチに checkout してからそのブランチを削除する。
-3. マージ済みでなければ、同期したベースブランチを今いるブランチに rebase する。コンフリクトしたら勝手に解決せず、状況を伝えて止まる。
+「同期」は local を remote に合わせる向きで行う。push はしない。
 
-未コミットの変更があるときは、捨てたり stash したりせずに、先にどうするかを確認する。
+1. `git fetch --prune origin` で remote の状態を取得する。
+2. 追跡ファイルに未コミットの変更（staged / unstaged）があれば、ここで止まって、どうするかを確認する。捨てたり stash したり commit したりしない。未追跡ファイルだけなら進めてよい。止まるときは、未コミットの変更（ファイルと概要）、今いるブランチが `origin/<ベース>` から何コミット進んで何コミット遅れているか、続行したら rebase と削除のどちらになるか（手順 3 の判定は読み取りだけなので先に行ってよい）を伝える。
+3. 今いるブランチがベースブランチ以外なら、マージ済みかどうかを判定する（下の「マージ済みの判定」）。
+4. マージ済みなら、ベースブランチに checkout し、local のベースブランチを `origin/<ベース>` に fast-forward してから、local の作業ブランチを削除する。squash マージ済みなら `git branch -D` を使ってよい。remote のブランチは削除しない。
+5. マージ済みでなければ、今いるブランチを離れずに local のベースブランチを `origin/<ベース>` に fast-forward し（`git fetch origin <ベース>:<ベース>`。local に無ければこれで作られる）、今いるブランチをそのベースブランチの上に rebase する（`git rebase <ベース>`）。コンフリクトしたら勝手に解決せず、状況を伝えて止まる。
+6. 今いるブランチがベースブランチなら、`origin/<ベース>` に fast-forward するだけでよい。
 
-## `switch` が付いているとき
+local のベースブランチが remote より進んでいる、または分岐していて fast-forward できないときは、何も変更せずに状況を伝えて止まる。
 
-rebase はせず、ベースブランチに移って環境を整える。
+### マージ済みの判定
 
-1. ベースブランチに checkout する。
-2. `git pull` する。
-3. Rails プロジェクト（`Gemfile` と `bin/rails` がある）なら `bundle install` と `bin/rails db:migrate` を実行する。
+次のどれかが成り立てばマージ済みとする。
+
+- 作業ブランチの先端が `origin/<ベース>` に含まれている（通常のマージ）
+- `gh` で、そのブランチの PR が MERGED になっている
+- 作業ブランチを `origin/<ベース>` にマージしても差分が出ない（内容がすべて取り込み済み。squash マージ）
+
+`gh` が使えない、PR が見つからないときは、残りの条件だけで判定する。どれも成り立たなければ未マージとして扱う。
+
+## 終わったら伝えること
+
+最後に次を伝える。途中で止まったときも、そこまでに行ったことを同じ形で伝える。
+
+- 使ったベースブランチと、そう決めた理由
+- 行ったこと（fast-forward の範囲、rebase したか、削除したか）と、今いるブランチ
+- ブランチを削除したときは、マージ済みと判断した根拠と、削除したブランチの先端のコミットハッシュ
+- push していないこと（rebase 後の force push は頼まれたときだけ行う）
 
 ## 例
 
 - `/sync` — develop か staging（無ければ main）と同期
 - `/sync main` — main と同期
 - `/sync staging` — staging と同期
-- `/sync staging switch` — staging に移って pull、bundle install、db:migrate
