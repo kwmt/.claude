@@ -23,6 +23,11 @@ disable-model-invocation: true
 > パフォーマンス上のリスクが高いとき）**を挙げている点にある。§0-3 の規模テーブルは、
 > その条件を満たすときだけ委譲するための実装。条件を満たさない小さな差分では委譲しない。
 
+> **ワークフローからの参照**: `~/.claude/workflows/implement-change.js` のレビュー担当は、
+> 実行時にこのファイルを Read して §0-3 の規模表・§1 の観点表と共通の但し書き・§2 の集約手順に従う。
+> これらの節番号や観点名（`security` / `quality` / `convention` / `simplify` / `requirements` /
+> `checklist`）、severity の語彙を変えるときは、ワークフロー側も合わせる。
+
 ## 0. レビュー対象と観点の確定
 
 ### 0-1. 差分スコープを決める
