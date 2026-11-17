@@ -1,6 +1,6 @@
 ---
-description: ベースブランチ（develop / staging / main）を remote と同期し、作業ブランチを rebase する。マージ済みの作業ブランチは削除する。switch を付けると、ベースブランチに移って pull と Rails のセットアップを行う。
-argument-hint: "[main|staging|develop] [switch]"
+description: ベースブランチ（develop / staging / main）を remote と同期し、作業ブランチを rebase する。マージ済みの作業ブランチは削除する。
+argument-hint: "[main|staging|develop]"
 ---
 
 ベースブランチを remote と同期する。引数: `$ARGUMENTS`
@@ -10,7 +10,7 @@ argument-hint: "[main|staging|develop] [switch]"
 - 引数にブランチ名（`main` / `staging` / `stg` / `develop` など）があればそれを使う。`stg` は `staging` と読み替える。
 - 無ければ、origin に存在するものを `develop` → `staging` → `main` の順に探し、最初に見つかったものを使う。
 
-## 通常の動作
+## 手順
 
 「同期」は local を remote に合わせる向きで行う。push はしない。
 
@@ -33,23 +33,13 @@ local のベースブランチが remote より進んでいる、または分岐
 
 `gh` が使えない、PR が見つからないときは、残りの条件だけで判定する。どれも成り立たなければ未マージとして扱う。
 
-## `switch` が付いているとき
-
-rebase もブランチの削除もせず、ベースブランチに移って環境を整える。元いたブランチには触れない。
-
-1. 追跡ファイルに未コミットの変更があれば、通常の動作と同じく止まって確認する。
-2. ベースブランチに checkout する。
-3. `git pull --ff-only` する。fast-forward できないときは、通常の動作と同じく状況を伝えて止まる。
-4. Rails プロジェクト（`Gemfile` と `bin/rails` がある）なら `bundle install` を実行し、成功したら `bin/rails db:migrate` を実行する。失敗したコマンドがあれば、後続を実行せずにエラーを伝えて止まる。回避策を探して環境を書き換えない。
-
 ## 終わったら伝えること
 
-通常の動作でも `switch` でも、最後に次を伝える。途中で止まったときも、そこまでに行ったことを同じ形で伝える。
+最後に次を伝える。途中で止まったときも、そこまでに行ったことを同じ形で伝える。
 
 - 使ったベースブランチと、そう決めた理由
 - 行ったこと（fast-forward の範囲、rebase したか、削除したか）と、今いるブランチ
 - ブランチを削除したときは、マージ済みと判断した根拠と、削除したブランチの先端のコミットハッシュ
-- `switch` のときは、`bundle install` と `bin/rails db:migrate` それぞれの結果（実行していないならその理由）
 - push していないこと（rebase 後の force push は頼まれたときだけ行う）
 
 ## 例
@@ -57,4 +47,3 @@ rebase もブランチの削除もせず、ベースブランチに移って環�
 - `/sync` — develop か staging（無ければ main）と同期
 - `/sync main` — main と同期
 - `/sync staging` — staging と同期
-- `/sync staging switch` — staging に移って pull、bundle install、db:migrate
